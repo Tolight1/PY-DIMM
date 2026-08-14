@@ -1,0 +1,1119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SettingsDialog</class>
+ <widget class="QDialog" name="SettingsDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+     <width>820</width>
+     <height>680</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>KY-DIMM 参数设置</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="physicalTab">
+      <attribute name="title">
+       <string>物理/光学参数</string>
+      </attribute>
+      <layout class="QGridLayout" name="physicalGrid">
+       <item row="0" column="0">
+        <widget class="QLabel" name="labelPhysicalMainAperture">
+         <property name="text">
+           <string>主镜口径（mm）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QDoubleSpinBox" name="physicalMainApertureMmSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>2000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>254.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labelPhysicalSubAperture">
+         <property name="text">
+           <string>子孔径直径（mm）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="physicalSubApertureMmSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>500.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>60.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="labelPhysicalBaseline">
+         <property name="text">
+           <string>两个圆形窗口中心距离（mm）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="physicalBaselineMmSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>500.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>150.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="labelPhysicalFocalLength">
+         <property name="text">
+           <string>焦距（mm）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QDoubleSpinBox" name="physicalFocalLengthMmSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>10.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>20000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>2500.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="labelPhysicalWavelength">
+         <property name="text">
+           <string>波长（nm）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="physicalWavelengthNmSpin">
+         <property name="decimals">
+            <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>300.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1100.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>550.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="labelPhysicalPixelSize">
+         <property name="text">
+           <string>像元尺寸（µm）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QDoubleSpinBox" name="physicalPixelSizeUmSpin">
+         <property name="decimals">
+          <number>3</number>
+         </property>
+         <property name="minimum">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>20.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>5.860000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="labelPhysicalZenith">
+         <property name="text">
+           <string>天顶角（°）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QDoubleSpinBox" name="physicalZenithAngleDegSpin">
+         <property name="decimals">
+            <number>2</number>
+         </property>
+         <property name="minimum">
+          <double>0.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>90.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="2">
+        <widget class="QLabel" name="labelPhysicalHelp">
+         <property name="text">
+           <string>默认值：D = 60 mm、B = 150 mm（物理基线）、f = 2500 mm、λ = 550 nm、像元尺寸 = 5.86 µm。</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="acquisitionTab">
+      <attribute name="title">
+       <string>采集参数</string>
+      </attribute>
+      <layout class="QGridLayout" name="acquisitionGrid">
+       <item row="0" column="0">
+        <widget class="QLabel" name="labelAcquisitionWidth">
+         <property name="text">
+           <string>传感器宽度（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QSpinBox" name="acquisitionWidthSpin">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+         <property name="value">
+          <number>1920</number>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labelAcquisitionHeight">
+         <property name="text">
+           <string>传感器高度（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="acquisitionHeightSpin">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+         <property name="value">
+          <number>1200</number>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="labelAcquisitionPixelFormat">
+         <property name="text">
+          <string>像素格式</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QComboBox" name="acquisitionPixelFormatCombo">
+         <item>
+          <property name="text">
+           <string>Mono8</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="labelAcquisitionMeasurementRate">
+         <property name="text">
+           <string>测量帧率（Hz）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QDoubleSpinBox" name="acquisitionMeasurementRateSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>10.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>100.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="labelAcquisitionFullFramePreviewRate">
+         <property name="text">
+           <string>全画幅预览帧率（Hz）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="acquisitionFullFramePreviewRateSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>60.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>3.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="labelAcquisitionRoiPreviewRate">
+         <property name="text">
+           <string>ROI 预览帧率（Hz）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QDoubleSpinBox" name="acquisitionRoiPreviewRateSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>120.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>20.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="labelAcquisitionExposure">
+         <property name="text">
+           <string>曝光时间（ms）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QDoubleSpinBox" name="acquisitionExposureMsSpin">
+         <property name="decimals">
+          <number>3</number>
+         </property>
+         <property name="minimum">
+          <double>0.010000000000000</double>
+         </property>
+         <property name="maximum">
+           <double>10.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>5.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="labelAcquisitionTargetSamples">
+         <property name="text">
+          <string>目标样本数</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QSpinBox" name="acquisitionTargetSamplesSpin">
+         <property name="minimum">
+          <number>100</number>
+         </property>
+         <property name="maximum">
+          <number>1000000</number>
+         </property>
+         <property name="value">
+          <number>2000</number>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="labelAcquisitionTargetDuration">
+         <property name="text">
+           <string>目标时长（s）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
+        <widget class="QDoubleSpinBox" name="acquisitionTargetDurationSecSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>3600.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>20.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QLabel" name="labelAcquisitionHardwareAoi">
+         <property name="text">
+          <string>启用硬件 AOI</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="1">
+        <widget class="QCheckBox" name="acquisitionHardwareAoiCheck">
+         <property name="text">
+          <string>使用单个包围 AOI 承载两个软件 ROI</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0" colspan="2">
+        <widget class="QLabel" name="labelAcquisitionHelp">
+         <property name="text">
+           <string>当前版本固定使用 1920 × 1200、Mono8。测量帧率是有效性的硬性要求；预览帧率仅影响界面刷新。</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="processingTab">
+      <attribute name="title">
+       <string>图像处理参数</string>
+      </attribute>
+      <layout class="QGridLayout" name="processingGrid">
+       <item row="0" column="0">
+        <widget class="QLabel" name="labelProcessingRoiWidth">
+         <property name="text">
+           <string>ROI 宽度（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QSpinBox" name="processingRoiWidthSpin">
+         <property name="minimum">
+          <number>8</number>
+         </property>
+         <property name="maximum">
+          <number>1024</number>
+         </property>
+         <property name="value">
+          <number>64</number>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labelProcessingRoiHeight">
+         <property name="text">
+           <string>ROI 高度（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="processingRoiHeightSpin">
+         <property name="minimum">
+          <number>8</number>
+         </property>
+         <property name="maximum">
+          <number>1024</number>
+         </property>
+         <property name="value">
+          <number>64</number>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="labelProcessingAoiMargin">
+         <property name="text">
+           <string>硬件 AOI 边距（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QSpinBox" name="processingAoiMarginSpin">
+         <property name="maximum">
+          <number>1024</number>
+         </property>
+         <property name="value">
+          <number>64</number>
+         </property>
+        </widget>
+       </item>
+       <item row="19" column="0">
+        <widget class="QLabel" name="labelProcessingOtsuSigma">
+         <property name="text"><string>Otsu σ 倍数</string></property>
+        </widget>
+       </item>
+       <item row="19" column="1">
+        <widget class="QDoubleSpinBox" name="processingOtsuSigmaSpin">
+         <property name="decimals"><number>2</number></property>
+         <property name="minimum"><double>0.000000000000000</double></property>
+         <property name="maximum"><double>20.000000000000000</double></property>
+         <property name="value"><double>4.000000000000000</double></property>
+        </widget>
+       </item>
+       <item row="20" column="0">
+        <widget class="QLabel" name="labelProcessingOtsuPeakFraction">
+         <property name="text"><string>Otsu 峰值比例</string></property>
+        </widget>
+       </item>
+       <item row="20" column="1">
+        <widget class="QDoubleSpinBox" name="processingOtsuPeakFractionSpin">
+         <property name="decimals"><number>2</number></property>
+         <property name="minimum"><double>0.010000000000000</double></property>
+         <property name="maximum"><double>0.950000000000000</double></property>
+         <property name="value"><double>0.200000000000000</double></property>
+        </widget>
+       </item>
+       <item row="21" column="0">
+        <widget class="QLabel" name="labelProcessingConnectivity">
+         <property name="text"><string>连通域连接方式</string></property>
+        </widget>
+       </item>
+       <item row="21" column="1">
+        <widget class="QComboBox" name="processingConnectivityCombo">
+         <item><property name="text"><string>4 连通</string></property><property name="userData"><number>4</number></property></item>
+         <item><property name="text"><string>8 连通（默认）</string></property><property name="userData"><number>8</number></property></item>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="labelProcessingMinComponentArea">
+         <property name="text">
+           <string>最小连通域面积（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QSpinBox" name="processingMinComponentAreaSpin">
+         <property name="minimum">
+          <number>9</number>
+         </property>
+         <property name="maximum">
+            <number>4096</number>
+         </property>
+         <property name="value">
+           <number>9</number>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="labelProcessingMaxComponentArea">
+         <property name="text">
+           <string>最大连通域面积（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QSpinBox" name="processingMaxComponentAreaSpin">
+         <property name="minimum">
+          <number>9</number>
+         </property>
+         <property name="maximum">
+          <number>262144</number>
+         </property>
+         <property name="value">
+           <number>1000</number>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="labelProcessingSmallKernelRadius">
+         <property name="text">
+           <string>小核半径（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QSpinBox" name="processingSmallKernelRadiusSpin">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+           <number>20</number>
+         </property>
+         <property name="value">
+           <number>3</number>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="labelProcessingMinimumPeakDistance">
+         <property name="text">
+           <string>最小星间距（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QDoubleSpinBox" name="processingMinimumPeakDistanceSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>500.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>8.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="2">
+        <widget class="QLabel" name="labelProcessingMinimumCentroidIntensity">
+         <property name="text">
+          <string>质心最小强度</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="3">
+        <widget class="QDoubleSpinBox" name="processingMinimumCentroidIntensitySpin">
+         <property name="decimals">
+          <number>2</number>
+         </property>
+         <property name="maximum">
+          <double>65535.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="labelProcessingEdgeDistance">
+         <property name="text">
+           <string>边缘触发距离（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
+        <widget class="QSpinBox" name="processingEdgeDistanceSpin">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>500</number>
+         </property>
+         <property name="value">
+          <number>16</number>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QLabel" name="labelProcessingRecenteringConsecutive">
+         <property name="text">
+          <string>连续近边帧数</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="1">
+        <widget class="QSpinBox" name="processingRecenteringConsecutiveSpin">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>1000</number>
+         </property>
+         <property name="value">
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
+        <widget class="QLabel" name="labelProcessingRecenteringCooldown">
+         <property name="text">
+           <string>重定位冷却时间（ms）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="1">
+        <widget class="QSpinBox" name="processingRecenteringCooldownMsSpin">
+         <property name="maximum">
+          <number>600000</number>
+         </property>
+         <property name="value">
+          <number>3000</number>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QLabel" name="labelProcessingMinimumShift">
+         <property name="text">
+           <string>最小移动量（px）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <widget class="QDoubleSpinBox" name="processingMinimumShiftSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>500.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>8.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
+        <widget class="QLabel" name="labelProcessingLostFrames">
+         <property name="text">
+           <string>丢失后重定位帧数</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="1">
+        <widget class="QSpinBox" name="processingLostFramesSpin">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+         <property name="value">
+          <number>10</number>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <widget class="QLabel" name="labelProcessingR0WindowFrames">
+         <property name="text">
+           <string>r0 计算窗口（帧）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="1">
+        <widget class="QSpinBox" name="processingR0WindowFramesSpin">
+         <property name="minimum">
+          <number>10</number>
+         </property>
+         <property name="maximum">
+          <number>100000</number>
+         </property>
+         <property name="value">
+          <number>1000</number>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0">
+        <widget class="QLabel" name="labelProcessingResultUpdateInterval">
+         <property name="text">
+           <string>结果更新间隔（s）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="1">
+        <widget class="QDoubleSpinBox" name="processingResultUpdateIntervalSpin">
+         <property name="decimals">
+          <number>2</number>
+         </property>
+         <property name="minimum">
+          <double>0.050000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>600.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="0">
+        <widget class="QLabel" name="labelProcessingTauHistorySeconds">
+         <property name="text">
+           <string>tau0 历史时长（s）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="1">
+        <widget class="QSpinBox" name="processingTauHistorySecondsSpin">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>600</number>
+         </property>
+         <property name="value">
+          <number>3</number>
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="0">
+        <widget class="QLabel" name="labelProcessingTauMaximumLag">
+         <property name="text">
+           <string>tau0 最大滞后（ms）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="16" column="1">
+        <widget class="QDoubleSpinBox" name="processingTauMaximumLagMsSpin">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="minimum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>5000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>200.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="17" column="0">
+        <widget class="QLabel" name="labelProcessingTauMinimumSamples">
+         <property name="text">
+           <string>tau0 最少样本数</string>
+         </property>
+        </widget>
+       </item>
+       <item row="17" column="1">
+        <widget class="QSpinBox" name="processingTauMinimumSamplesSpin">
+         <property name="minimum">
+          <number>2</number>
+         </property>
+         <property name="maximum">
+          <number>10000</number>
+         </property>
+         <property name="value">
+          <number>30</number>
+         </property>
+        </widget>
+       </item>
+       <item row="18" column="0" colspan="2">
+        <widget class="QLabel" name="labelProcessingHelp">
+         <property name="text">
+          <string>处理路径：原生 Otsu + 均值/4σ/峰值比例阈值 → 可配置连通域（默认 8 连通、面积 9–1000）→ 7×7 小核强度加权质心。</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="triggerTab">
+      <attribute name="title">
+       <string>触发设置</string>
+      </attribute>
+      <layout class="QGridLayout" name="triggerGrid">
+       <item row="0" column="0">
+        <widget class="QLabel" name="labelTriggerMode">
+         <property name="text">
+          <string>触发模式</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="triggerModeCombo">
+         <item>
+          <property name="text">
+           <string>连续采集</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>软件触发</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>硬件触发</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labelTriggerHardwareLine">
+         <property name="text">
+          <string>硬件触发线</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="triggerHardwareLineCombo">
+         <item>
+          <property name="text">
+           <string>Line1</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Line2</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Line3</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Line4</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="labelTriggerFrameStart">
+         <property name="text">
+          <string>帧起始选择器</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QCheckBox" name="triggerFrameStartCheck">
+         <property name="text">
+          <string>TriggerSelector=FrameStart</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="labelTriggerSoftwareEachFrame">
+         <property name="text">
+           <string>逐帧软件触发</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QCheckBox" name="triggerSoftwareEachFrameCheck">
+         <property name="text">
+           <string>软件触发模式下，每帧发送一次触发信号</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="labelTriggerAllowPartialScan">
+         <property name="text">
+          <string>允许部分扫描</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QCheckBox" name="triggerAllowPartialScanCheck">
+         <property name="text">
+          <string>不改变物理测量路径</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="2">
+        <widget class="QLabel" name="labelTriggerHelp">
+         <property name="text">
+           <string>连续采集时相机自由运行（默认）；软件触发由程序按需发送逐帧触发信号；硬件触发使用所选触发线。</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="storageTab">
+      <attribute name="title">
+       <string>数据存储</string>
+      </attribute>
+      <layout class="QGridLayout" name="storageGrid">
+       <item row="0" column="0">
+        <widget class="QLabel" name="labelStorageOutputDirectory">
+         <property name="text">
+          <string>输出目录</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="storageOutputDirectoryEdit">
+         <property name="placeholderText">
+          <string>选择结果输出目录</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="storageBrowseButton">
+         <property name="text">
+           <string>浏览…</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labelStorageRecordInterval">
+         <property name="text">
+           <string>记录间隔（s）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="storageRecordIntervalSpin">
+         <property name="decimals">
+          <number>2</number>
+         </property>
+         <property name="minimum">
+          <double>0.050000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>600.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="labelStorageParameterCsv">
+         <property name="text">
+          <string>大气参数 CSV</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QCheckBox" name="storageParameterCsvCheck">
+         <property name="text">
+          <string>atmosphere_summary.csv</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="labelStorageCentroidCsv">
+         <property name="text">
+          <string>质心 CSV</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QCheckBox" name="storageCentroidCsvCheck">
+         <property name="text">
+          <string>centroid_details.csv</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="labelStorageDiagnosticsCsv">
+         <property name="text">
+          <string>采集诊断 CSV</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QCheckBox" name="storageDiagnosticsCsvCheck">
+         <property name="text">
+          <string>acquisition_diagnostics.csv</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="labelStorageMetadataJson">
+         <property name="text">
+          <string>运行元数据 JSON</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QCheckBox" name="storageMetadataJsonCheck">
+         <property name="text">
+          <string>run_metadata.json</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0" colspan="3">
+        <widget class="QLabel" name="storageImageSavingFixedOffLabel">
+         <property name="text">
+           <string>当前版本不保存全画幅图像和 ROI 原始图像。</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>SettingsDialog</receiver>
+   <slot>accept()</slot>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>SettingsDialog</receiver>
+   <slot>reject()</slot>
+  </connection>
+ </connections>
+</ui>

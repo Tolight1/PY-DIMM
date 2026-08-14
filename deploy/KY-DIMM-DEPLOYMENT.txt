@@ -1,0 +1,29 @@
+KY-DIMM Release deployment package
+==================================
+
+1. Build the Release configuration in Visual Studio or CMake.
+2. Copy the complete build\Release directory to the test computer.
+3. Start KY_DIMM.exe from that copied directory.
+
+The post-build deployment step places Qt DLLs/plugins, the matching OpenCV
+runtime, the pylon native/GigE runtime, ProducerGEV.cti, and the MSVC runtime
+beside KY_DIMM.exe. Do not copy from build\Debug and do not mix Debug DLLs with
+the Release executable.
+
+Target computer requirements
+----------------------------
+
+- Windows x64.
+- The matching Basler pylon 12.x runtime/SDK installed, with the camera driver
+  and GigE transport support available.
+- The acA1920-40gm camera reachable through the configured GigE adapter.
+- The target computer must allow the camera network traffic through its
+  firewall and use a suitable jumbo-frame/network configuration if required by
+  the camera setup.
+
+The application currently requires Mono8 and searches for the exact camera
+model acA1920-40gm. No raw images are saved by the current configuration.
+
+If the application reports that no camera is available, first verify the
+camera in Basler pylon Viewer on the target computer, then check the camera
+IP/subnet and the adapter/firewall settings.

@@ -1,0 +1,27 @@
+# CMake and compiler output
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+CTestTestfile.cmake
+Makefile
+*.vcxproj
+*.vcxproj.filters
+*.sln
+*.suo
+
+# Python test/runtime caches
+.pytest_cache/
+__pycache__/
+*.py[cod]
+
+# Local IDE configuration and machine-specific SDK paths
+.vscode/
+.vs/
+*.user
+
+# Local logs and generated deployment output
+*.log
+deploy/bin/
+deploy/lib/
