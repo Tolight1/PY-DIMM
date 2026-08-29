@@ -9,6 +9,6 @@ class ImageDisplayAdapter final {
 public:
     static QImage toGrayImage(const cv::Mat &mono8);
     static QImage drawOverlay(const QImage &base,
-                              const RoiOverlay &overlay,
+                              const DisplayOverlay &overlay,
                               const QRect &fullFrameRect);
 };

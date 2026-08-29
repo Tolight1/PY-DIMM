@@ -46,7 +46,7 @@ QImage ImageDisplayAdapter::toGrayImage(const cv::Mat &mono8)
 }
 
 QImage ImageDisplayAdapter::drawOverlay(const QImage &base,
-                                        const RoiOverlay &overlay,
+                                         const DisplayOverlay &overlay,
                                         const QRect &fullFrameRect)
 {
     if (base.isNull())
@@ -67,23 +67,31 @@ QImage ImageDisplayAdapter::drawOverlay(const QImage &base,
                                  fullFrameRect));
     }
 
-    if (overlay.hasRois) {
-        QPen roiPen(QColor(255, 220, 80, 230));
-        roiPen.setWidth(1);
-        painter.setPen(roiPen);
+    if (overlay.hasCentroids) {
+        QPen centroidPen(QColor(255, 70, 70, 255));
+        centroidPen.setWidthF(1.5);
+        painter.setPen(centroidPen);
         painter.setBrush(Qt::NoBrush);
-        painter.drawRect(
-            mapRect(overlay.roiA.toQRect(), imageSize, fullFrameRect));
-        painter.drawRect(
-            mapRect(overlay.roiB.toQRect(), imageSize, fullFrameRect));
+        const auto drawCross = [&](const QPointF &source) {
+            const QPointF center = mapPoint(source, imageSize, fullFrameRect);
+            const double arm = 8.0;
+            const auto drawLines = [&]() {
+                painter.drawLine(QPointF(center.x() - arm, center.y()),
+                                 QPointF(center.x() + arm, center.y()));
+                painter.drawLine(QPointF(center.x(), center.y() - arm),
+                                 QPointF(center.x(), center.y() + arm));
+            };
+            QPen outlinePen(QColor(0, 0, 0, 220));
+            outlinePen.setWidthF(4.5);
+            painter.setPen(outlinePen);
+            drawLines();
+            centroidPen.setWidthF(2.0);
+            painter.setPen(centroidPen);
+            drawLines();
+        };
+        drawCross(overlay.starA);
+        drawCross(overlay.starB);
     }
-
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(0, 255, 140, 255));
-    const QPointF starA = mapPoint(overlay.starA, imageSize, fullFrameRect);
-    const QPointF starB = mapPoint(overlay.starB, imageSize, fullFrameRect);
-    painter.drawEllipse(starA, 4.0, 4.0);
-    painter.drawEllipse(starB, 4.0, 4.0);
 
     return image;
 }

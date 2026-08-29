@@ -37,7 +37,7 @@
           <number>1</number>
          </property>
          <property name="minimum">
-          <double>1.000000000000000</double>
+          <double>0.100000000000000</double>
          </property>
          <property name="maximum">
           <double>2000.000000000000000</double>
@@ -66,7 +66,7 @@
           <double>500.000000000000000</double>
          </property>
          <property name="value">
-          <double>60.000000000000000</double>
+          <double>80.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -89,18 +89,41 @@
           <double>500.000000000000000</double>
          </property>
          <property name="value">
-          <double>150.000000000000000</double>
+          <double>170.000000000000000</double>
          </property>
         </widget>
        </item>
        <item row="3" column="0">
+        <widget class="QLabel" name="labelPhysicalBaselineAngle">
+         <property name="text">
+           <string>基线方向角（°）</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+       <widget class="QDoubleSpinBox" name="physicalBaselineAngleDegSpin">
+         <property name="decimals">
+          <number>2</number>
+         </property>
+         <property name="minimum">
+          <double>-180.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>180.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
         <widget class="QLabel" name="labelPhysicalFocalLength">
          <property name="text">
            <string>焦距（mm）</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="4" column="1">
         <widget class="QDoubleSpinBox" name="physicalFocalLengthMmSpin">
          <property name="decimals">
           <number>1</number>
@@ -116,14 +139,14 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="labelPhysicalWavelength">
          <property name="text">
            <string>波长（nm）</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="5" column="1">
         <widget class="QDoubleSpinBox" name="physicalWavelengthNmSpin">
          <property name="decimals">
             <number>1</number>
@@ -139,14 +162,14 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="labelPhysicalPixelSize">
          <property name="text">
            <string>像元尺寸（µm）</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="6" column="1">
         <widget class="QDoubleSpinBox" name="physicalPixelSizeUmSpin">
          <property name="decimals">
           <number>3</number>
@@ -162,15 +185,15 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="labelPhysicalZenith">
          <property name="text">
            <string>天顶角（°）</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
-        <widget class="QDoubleSpinBox" name="physicalZenithAngleDegSpin">
+       <item row="7" column="1">
+       <widget class="QDoubleSpinBox" name="physicalZenithAngleDegSpin">
          <property name="decimals">
             <number>2</number>
          </property>
@@ -181,14 +204,14 @@
           <double>90.000000000000000</double>
          </property>
          <property name="value">
-          <double>0.000000000000000</double>
+          <double>49.600000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="7" column="0" colspan="2">
+       <item row="8" column="0" colspan="2">
         <widget class="QLabel" name="labelPhysicalHelp">
          <property name="text">
-           <string>默认值：D = 60 mm、B = 150 mm（物理基线）、f = 2500 mm、λ = 550 nm、像元尺寸 = 5.86 µm。</string>
+           <string>默认值：D = 80 mm、B = 170 mm（物理基线）、基线方向角 = 0°、f = 2500 mm、λ = 550 nm、像元尺寸 = 5.86 µm、Z = 49.6°（北京市密云区北极星）。</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
@@ -281,15 +304,15 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="labelAcquisitionFullFramePreviewRate">
-         <property name="text">
-           <string>全画幅预览帧率（Hz）</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QDoubleSpinBox" name="acquisitionFullFramePreviewRateSpin">
+        <item row="4" column="0">
+         <widget class="QLabel" name="labelAcquisitionPreviewRate">
+          <property name="text">
+            <string>全画幅质心预览帧率（Hz）</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QDoubleSpinBox" name="acquisitionPreviewRateSpin">
          <property name="decimals">
           <number>1</number>
          </property>
@@ -297,33 +320,10 @@
           <double>0.100000000000000</double>
          </property>
          <property name="maximum">
-          <double>60.000000000000000</double>
+           <double>120.000000000000000</double>
          </property>
          <property name="value">
-          <double>3.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="labelAcquisitionRoiPreviewRate">
-         <property name="text">
-           <string>ROI 预览帧率（Hz）</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QDoubleSpinBox" name="acquisitionRoiPreviewRateSpin">
-         <property name="decimals">
-          <number>1</number>
-         </property>
-         <property name="minimum">
-          <double>0.100000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>120.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>20.000000000000000</double>
+           <double>20.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -403,7 +403,7 @@
        <item row="9" column="1">
         <widget class="QCheckBox" name="acquisitionHardwareAoiCheck">
          <property name="text">
-          <string>使用单个包围 AOI 承载两个软件 ROI</string>
+           <string>启用硬件 AOI（单个 AOI 包含双星）</string>
          </property>
          <property name="checked">
           <bool>true</bool>
@@ -422,68 +422,163 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="aoiTab">
+      <attribute name="title">
+       <string>AOI设置</string>
+      </attribute>
+      <layout class="QGridLayout" name="aoiGrid">
+        <item row="0" column="0">
+        <widget class="QLabel" name="labelAoiCentroidKernelRadius">
+          <property name="text"><string>质心计算核半径（px）</string></property>
+          <property name="toolTip"><string>最终测量使用以候选质心为中心的正方形质心核；半径 3 = 7 × 7。修改半径后边长为 2r + 1。</string></property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QSpinBox" name="aoiCentroidKernelRadiusSpin">
+          <property name="minimum"><number>1</number></property>
+          <property name="maximum"><number>20</number></property>
+          <property name="value"><number>3</number></property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+        <widget class="QLabel" name="labelAoiHardwareMargin">
+         <property name="text"><string>硬件 AOI 边距（px）</string></property>
+        </widget>
+       </item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="aoiHardwareMarginSpin">
+          <property name="maximum"><number>1024</number></property>
+          <property name="value"><number>32</number></property>
+        </widget>
+       </item>
+        <item row="2" column="0">
+        <widget class="QLabel" name="labelAoiMaxWidth">
+         <property name="text"><string>AOI 性能目标宽度（px）</string></property>
+        </widget>
+       </item>
+        <item row="2" column="1">
+        <widget class="QSpinBox" name="aoiMaxWidthSpin">
+         <property name="minimum"><number>1</number></property>
+         <property name="maximum"><number>1920</number></property>
+         <property name="value"><number>300</number></property>
+        </widget>
+       </item>
+        <item row="3" column="0">
+        <widget class="QLabel" name="labelAoiMaxHeight">
+         <property name="text"><string>AOI 性能目标高度（px）</string></property>
+        </widget>
+       </item>
+        <item row="3" column="1">
+        <widget class="QSpinBox" name="aoiMaxHeightSpin">
+         <property name="minimum"><number>1</number></property>
+         <property name="maximum"><number>1200</number></property>
+         <property name="value"><number>300</number></property>
+        </widget>
+       </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="labelAoiLostPairRelocalizationFrames">
+         <property name="text"><string>丢星后全画幅重定位帧数</string></property>
+        </widget>
+       </item>
+        <item row="4" column="1">
+         <widget class="QSpinBox" name="aoiLostPairRelocalizationFramesSpin">
+         <property name="minimum"><number>1</number></property>
+         <property name="maximum"><number>10000</number></property>
+         <property name="value"><number>10</number></property>
+        </widget>
+       </item>
+        <item row="5" column="0">
+        <widget class="QLabel" name="labelAoiHardwareUpdateDistance">
+          <property name="text"><string>硬件 AOI 更新安全边界距离（px）</string></property>
+        </widget>
+       </item>
+        <item row="5" column="1">
+        <widget class="QSpinBox" name="aoiHardwareUpdateDistanceSpin">
+         <property name="maximum"><number>1024</number></property>
+         <property name="value"><number>32</number></property>
+        </widget>
+       </item>
+        <item row="6" column="0">
+        <widget class="QLabel" name="labelAoiHardwareUpdateShift">
+         <property name="text"><string>硬件 AOI 最小移动量（px）</string></property>
+        </widget>
+       </item>
+        <item row="6" column="1">
+        <widget class="QDoubleSpinBox" name="aoiHardwareUpdateShiftSpin">
+         <property name="decimals"><number>1</number></property>
+         <property name="minimum"><double>0.500000000000000</double></property>
+         <property name="maximum"><double>2000.000000000000000</double></property>
+         <property name="value"><double>16.000000000000000</double></property>
+        </widget>
+       </item>
+        <item row="7" column="0">
+        <widget class="QLabel" name="labelAoiHardwareUpdateCooldown">
+         <property name="text"><string>硬件 AOI 更新冷却时间（ms）</string></property>
+        </widget>
+       </item>
+        <item row="7" column="1">
+        <widget class="QSpinBox" name="aoiHardwareUpdateCooldownSpin">
+         <property name="maximum"><number>600000</number></property>
+         <property name="value"><number>1000</number></property>
+        </widget>
+       </item>
+        <item row="8" column="0">
+        <widget class="QLabel" name="labelAoiMinimumPeakDistance">
+         <property name="text"><string>候选最小间距基准（px）</string></property>
+         <property name="toolTip"><string>两个候选连通域质心的实际最小距离为该值的 2 倍。</string></property>
+        </widget>
+       </item>
+        <item row="8" column="1">
+        <widget class="QDoubleSpinBox" name="aoiMinimumPeakDistanceSpin">
+         <property name="toolTip"><string>两个候选连通域质心的实际最小距离为该值的 2 倍。</string></property>
+         <property name="decimals"><number>1</number></property>
+         <property name="minimum"><double>1.000000000000000</double></property>
+         <property name="maximum"><double>500.000000000000000</double></property>
+         <property name="value"><double>8.000000000000000</double></property>
+        </widget>
+       </item>
+        <item row="9" column="0">
+        <widget class="QLabel" name="labelAoiMaximumDifferentialJump">
+         <property name="text"><string>双星差分最大跳变量（px）</string></property>
+         <property name="toolTip"><string>相邻有效帧的双星差分跳变，以及相对短窗口中值基线的偏离阈值；不会重置测量窗口。</string></property>
+        </widget>
+       </item>
+       <item row="9" column="1">
+        <widget class="QDoubleSpinBox" name="aoiMaximumDifferentialJumpSpin">
+         <property name="toolTip"><string>单帧突变会立即隔离；短窗口基线偏离使用下方连续帧数判定，不会重置测量窗口。</string></property>
+         <property name="decimals"><number>1</number></property>
+         <property name="minimum"><double>0.5</double></property>
+         <property name="maximum"><double>2000.0</double></property>
+         <property name="value"><double>10.0</double></property>
+        </widget>
+       </item>
+       <item row="10" column="0">
+        <widget class="QLabel" name="labelAoiDifferentialBaselineViolationFrames">
+         <property name="text"><string>差分基线连续偏离帧数</string></property>
+         <property name="toolTip"><string>相对最近 20 个有效双星差分中值超过差分阈值时，连续达到该帧数才拒绝；正常整体平移不会改变双星差分。</string></property>
+        </widget>
+       </item>
+       <item row="10" column="1">
+        <widget class="QSpinBox" name="aoiDifferentialBaselineViolationFramesSpin">
+         <property name="toolTip"><string>连续达到该帧数后才拒绝差分基线偏离，默认 5 帧。</string></property>
+         <property name="minimum"><number>1</number></property>
+         <property name="maximum"><number>10000</number></property>
+         <property name="value"><number>5</number></property>
+        </widget>
+       </item>
+        <item row="11" column="0" colspan="2">
+         <widget class="QLabel" name="labelAoiHelp">
+          <property name="text"><string>每帧在两个候选质心周围使用最终质心核计算强度加权质心；默认半径 3，即 7 × 7，修改半径后边长为 2r + 1。只在质心核接近 AOI 边界时更新硬件 AOI，并受最小移动量和冷却时间限制。候选最小间距基准的实际双星距离阈值为它的 2 倍。差分跳变量用于拒绝单帧突变；差分基线连续偏离达到设定帧数后才拒绝渐变漂移。拒绝样本不会进入 r0 窗口，且不会清空已有测量窗口。性能目标仅用于诊断，不会为了满足 300 × 300 px 而裁掉星点。</string></property>
+         <property name="wordWrap"><bool>true</bool></property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="processingTab">
       <attribute name="title">
        <string>图像处理参数</string>
       </attribute>
       <layout class="QGridLayout" name="processingGrid">
-       <item row="0" column="0">
-        <widget class="QLabel" name="labelProcessingRoiWidth">
-         <property name="text">
-           <string>ROI 宽度（px）</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QSpinBox" name="processingRoiWidthSpin">
-         <property name="minimum">
-          <number>8</number>
-         </property>
-         <property name="maximum">
-          <number>1024</number>
-         </property>
-         <property name="value">
-          <number>64</number>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="labelProcessingRoiHeight">
-         <property name="text">
-           <string>ROI 高度（px）</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QSpinBox" name="processingRoiHeightSpin">
-         <property name="minimum">
-          <number>8</number>
-         </property>
-         <property name="maximum">
-          <number>1024</number>
-         </property>
-         <property name="value">
-          <number>64</number>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="labelProcessingAoiMargin">
-         <property name="text">
-           <string>硬件 AOI 边距（px）</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QSpinBox" name="processingAoiMarginSpin">
-         <property name="maximum">
-          <number>1024</number>
-         </property>
-         <property name="value">
-          <number>64</number>
-         </property>
-        </widget>
-       </item>
        <item row="19" column="0">
         <widget class="QLabel" name="labelProcessingOtsuSigma">
          <property name="text"><string>Otsu σ 倍数</string></property>
@@ -561,49 +656,6 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="labelProcessingSmallKernelRadius">
-         <property name="text">
-           <string>小核半径（px）</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QSpinBox" name="processingSmallKernelRadiusSpin">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-           <number>20</number>
-         </property>
-         <property name="value">
-           <number>3</number>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="labelProcessingMinimumPeakDistance">
-         <property name="text">
-           <string>最小星间距（px）</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QDoubleSpinBox" name="processingMinimumPeakDistanceSpin">
-         <property name="decimals">
-          <number>1</number>
-         </property>
-         <property name="minimum">
-          <double>1.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>500.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>8.000000000000000</double>
-         </property>
-        </widget>
-       </item>
        <item row="7" column="2">
         <widget class="QLabel" name="labelProcessingMinimumCentroidIntensity">
          <property name="text">
@@ -621,106 +673,6 @@
          </property>
          <property name="value">
           <double>1.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="labelProcessingEdgeDistance">
-         <property name="text">
-           <string>边缘触发距离（px）</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QSpinBox" name="processingEdgeDistanceSpin">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>500</number>
-         </property>
-         <property name="value">
-          <number>16</number>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="labelProcessingRecenteringConsecutive">
-         <property name="text">
-          <string>连续近边帧数</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <widget class="QSpinBox" name="processingRecenteringConsecutiveSpin">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>1000</number>
-         </property>
-         <property name="value">
-          <number>5</number>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="QLabel" name="labelProcessingRecenteringCooldown">
-         <property name="text">
-           <string>重定位冷却时间（ms）</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1">
-        <widget class="QSpinBox" name="processingRecenteringCooldownMsSpin">
-         <property name="maximum">
-          <number>600000</number>
-         </property>
-         <property name="value">
-          <number>3000</number>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="labelProcessingMinimumShift">
-         <property name="text">
-           <string>最小移动量（px）</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="1">
-        <widget class="QDoubleSpinBox" name="processingMinimumShiftSpin">
-         <property name="decimals">
-          <number>1</number>
-         </property>
-         <property name="minimum">
-          <double>0.500000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>500.000000000000000</double>
-         </property>
-         <property name="value">
-          <double>8.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="0">
-        <widget class="QLabel" name="labelProcessingLostFrames">
-         <property name="text">
-           <string>丢失后重定位帧数</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="1">
-        <widget class="QSpinBox" name="processingLostFramesSpin">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>10000</number>
-         </property>
-         <property name="value">
-          <number>10</number>
          </property>
         </widget>
        </item>
@@ -833,7 +785,7 @@
        <item row="18" column="0" colspan="2">
         <widget class="QLabel" name="labelProcessingHelp">
          <property name="text">
-          <string>处理路径：原生 Otsu + 均值/4σ/峰值比例阈值 → 可配置连通域（默认 8 连通、面积 9–1000）→ 7×7 小核强度加权质心。</string>
+          <string>处理路径：原生 Otsu + 均值/4σ/峰值比例阈值 → 可配置连通域（默认 8 连通、面积 9–1000）→ 动态质心窗口强度加权质心。</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
@@ -1081,7 +1033,7 @@
        <item row="6" column="0" colspan="3">
         <widget class="QLabel" name="storageImageSavingFixedOffLabel">
          <property name="text">
-           <string>当前版本不保存全画幅图像和 ROI 原始图像。</string>
+           <string>当前版本不保存原始图像。</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>

@@ -11,9 +11,7 @@
 // frames from FrameQueue.
 struct DisplaySnapshot {
     cv::Mat fullFrameMono8;
-    cv::Mat roiAMono8;
-    cv::Mat roiBMono8;
-    RoiOverlay overlay;
+    DisplayOverlay overlay;
     CameraStatistics cameraStats;
     MeasurementResult latestResult;
     std::uint64_t sequence = 0;
@@ -22,6 +20,13 @@ struct DisplaySnapshot {
 class DisplayMailbox final {
 public:
     void publish(DisplaySnapshot snapshot);
+    // Merge an AOI camera frame into the latest full-frame preview. The
+    // preview remains full-frame sized; pixels outside sourceRect retain the
+    // most recent full-frame image until another full-frame frame arrives.
+    void publishAoiPatch(const cv::Mat &aoiMono8,
+                        const QRect &sourceRect,
+                        const QSize &fullFrameSize,
+                        DisplaySnapshot snapshot);
     bool tryTake(DisplaySnapshot &snapshot) const;
     void clear();
 

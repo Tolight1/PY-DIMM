@@ -164,15 +164,6 @@ AtmosphereResult AtmosphereCalculator::calculate(std::uint64_t windowEndSequence
     const std::size_t n = window_.size();
     result.validSampleCount = static_cast<int>(n);
 
-    // Hard validity gate: a measurement rate below the configured minimum
-    // (100 Hz default) invalidates r0, seeing, theta0, and tau0.
-    if (measuredRateHz < config_.acquisition.measurementRateHz) {
-        result.statusMessage =
-            QStringLiteral("实际测量率为 %1 Hz，低于要求的 %2 Hz")
-                .arg(measuredRateHz, 0, 'f', 1)
-                .arg(config_.acquisition.measurementRateHz, 0, 'f', 1);
-        return result;
-    }
 
     if (n < static_cast<std::size_t>(config_.processing.r0WindowFrames)) {
         result.statusMessage = QStringLiteral("等待足够的有效样本（%1 / %2）")
@@ -211,7 +202,7 @@ AtmosphereResult AtmosphereCalculator::calculate(std::uint64_t windowEndSequence
     const double baselineM = config_.optical.baselineSeparationMm * 1.0e-3;
 
     // DIMM coefficients. The physical baseline is the distance between the two
-    // telescope circular-window centers (150 mm default), not a software ROI
+    // telescope circular-window centers (150 mm default), not an image crop
     // distance and not a prism-equivalent baseline.
     const double coefficientLongitudinal = 2.0 * lambdaM * lambdaM *
         (0.179 * std::pow(diameterM, -1.0 / 3.0) -
@@ -326,8 +317,7 @@ double AtmosphereCalculator::calculateTau0(bool &underResolved,
 
 DifferentialSample AtmosphereCalculator::makeSample(const TwoStarMeasurement &stars,
                                                     const OpticalConfig &optical,
-                                                    double timestampSec,
-                                                    double angleRad)
+                                                    double timestampSec)
 {
     DifferentialSample sample;
     sample.timestampSec = timestampSec;
@@ -336,7 +326,8 @@ DifferentialSample AtmosphereCalculator::makeSample(const TwoStarMeasurement &st
         return sample;
 
     // Image-space differential in the rotated longitudinal/transverse frame.
-    // angleRad defaults to 0 for the first KY-DIMM version.
+    // This is the same baseline-angle projection used by the UI_2 reference.
+    const double angleRad = optical.baselineAngleDeg * kPi / 180.0;
     const double dx = stars.fullFrameStarB.x() - stars.fullFrameStarA.x();
     const double dy = stars.fullFrameStarB.y() - stars.fullFrameStarA.y();
     const double longitudinalPx = dx * std::cos(angleRad) + dy * std::sin(angleRad);

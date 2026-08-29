@@ -12,12 +12,8 @@ void DisplayMailbox::publish(DisplaySnapshot snapshot)
         // producer erase the latest image from the other producer.
         if (snapshot.fullFrameMono8.empty())
             snapshot.fullFrameMono8 = snapshot_.fullFrameMono8;
-        if (snapshot.roiAMono8.empty())
-            snapshot.roiAMono8 = snapshot_.roiAMono8;
-        if (snapshot.roiBMono8.empty())
-            snapshot.roiBMono8 = snapshot_.roiBMono8;
-        if (isCameraUpdate && !snapshot.overlay.hasRois &&
-            snapshot_.overlay.hasRois)
+        if (isCameraUpdate && !snapshot.overlay.hasCentroids &&
+            snapshot_.overlay.hasCentroids)
             snapshot.overlay = snapshot_.overlay;
         if (snapshot.latestResult.sequence == 0)
             snapshot.latestResult = snapshot_.latestResult;
@@ -31,10 +27,61 @@ void DisplayMailbox::publish(DisplaySnapshot snapshot)
     // released while the GUI still displays it.
     if (!snapshot.fullFrameMono8.empty())
         snapshot.fullFrameMono8 = snapshot.fullFrameMono8.clone();
-    if (!snapshot.roiAMono8.empty())
-        snapshot.roiAMono8 = snapshot.roiAMono8.clone();
-    if (!snapshot.roiBMono8.empty())
-        snapshot.roiBMono8 = snapshot.roiBMono8.clone();
+    snapshot_ = std::move(snapshot);
+    hasSnapshot_ = true;
+}
+
+void DisplayMailbox::publishAoiPatch(const cv::Mat &aoiMono8,
+                                     const QRect &sourceRect,
+                                     const QSize &fullFrameSize,
+                                     DisplaySnapshot snapshot)
+{
+    if (aoiMono8.empty() || aoiMono8.type() != CV_8UC1 ||
+        sourceRect.isEmpty() || fullFrameSize.isEmpty() ||
+        sourceRect.width() != aoiMono8.cols ||
+        sourceRect.height() != aoiMono8.rows)
+        return;
+
+    QMutexLocker lock(&mutex_);
+
+    const int fullWidth = fullFrameSize.width();
+    const int fullHeight = fullFrameSize.height();
+    const QRect fullRect(0, 0, fullWidth, fullHeight);
+    const QRect patchRect = sourceRect.intersected(fullRect);
+    if (patchRect.isEmpty())
+        return;
+
+    cv::Mat fullFrame;
+    if (hasSnapshot_ && !snapshot_.fullFrameMono8.empty() &&
+        snapshot_.fullFrameMono8.type() == CV_8UC1 &&
+        snapshot_.fullFrameMono8.cols == fullWidth &&
+        snapshot_.fullFrameMono8.rows == fullHeight) {
+        fullFrame = snapshot_.fullFrameMono8.clone();
+    } else {
+        fullFrame = cv::Mat::zeros(fullHeight, fullWidth, CV_8UC1);
+    }
+
+    const int sourceX = patchRect.x() - sourceRect.x();
+    const int sourceY = patchRect.y() - sourceRect.y();
+    const cv::Rect sourceCv(sourceX, sourceY,
+                            patchRect.width(), patchRect.height());
+    const cv::Rect destinationCv(patchRect.x(), patchRect.y(),
+                                 patchRect.width(), patchRect.height());
+    aoiMono8(sourceCv).copyTo(fullFrame(destinationCv));
+    snapshot.fullFrameMono8 = std::move(fullFrame);
+
+    if (hasSnapshot_) {
+        // The measurement worker owns overlay/sequence/result. Preserve the
+        // independently published camera statistics when this preview tick
+        // only patches the latest full-frame canvas.
+        if (snapshot.latestResult.sequence == 0)
+            snapshot.latestResult = snapshot_.latestResult;
+        if (snapshot.cameraStats.receivedFrames == 0)
+            snapshot.cameraStats = snapshot_.cameraStats;
+        if (snapshot.sequence == 0)
+            snapshot.sequence = snapshot_.sequence;
+    }
+
     snapshot_ = std::move(snapshot);
     hasSnapshot_ = true;
 }

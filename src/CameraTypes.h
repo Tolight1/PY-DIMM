@@ -64,9 +64,15 @@ struct CameraStatistics {
     std::uint64_t receivedFrames = 0;
     std::uint64_t droppedFrames = 0;
     std::uint64_t queueDroppedFrames = 0;
-    double measuredRateHz = 0.0;
+    // targetRateHz is the requested AcquisitionFrameRate/Abs value;
+    // resultingFrameRateHz is the camera's ResultingFrameRateAbs readback;
+    // acquisitionRateHz is measured from host callback timestamps.
+    double targetRateHz = 0.0;
+    double resultingFrameRateHz = 0.0;
+    double acquisitionRateHz = 0.0;
     double averageCallbackMs = 0.0;
     bool connected = false;
+    QString rateDiagnostic;
     QString lastError;
 };
 

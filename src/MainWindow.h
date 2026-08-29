@@ -15,6 +15,7 @@ class QPlainTextEdit;
 class QPushButton;
 class QTimer;
 class SettingsDialog;
+class ZoomableImageView;
 
 class MainWindow final : public QMainWindow {
     Q_OBJECT
@@ -29,7 +30,6 @@ private slots:
     void onStopClicked();
     void onSettingsClicked();
     void refreshFullFramePreview();
-    void refreshRoiPreview();
     void refreshStatusSnapshot();
     void onResultReady(MeasurementResult result);
     void onMeasurementStatusReady(MeasurementResult result);
@@ -48,7 +48,7 @@ private:
     void onCameraReady(CameraCapabilities capabilities);
     void onCameraDisconnected();
     void onCameraStatsUpdated(CameraStatistics stats);
-    void onRoiStateChanged(RoiOverlay overlay);
+    void onStarStateChanged(DisplayOverlay overlay);
     void onMeasurementStatsUpdated(double measuredRateHz, std::uint64_t validPairs);
     void onMeasurementError(QString message);
     void onWorkerStopped(bool cameraWorker);
@@ -62,17 +62,14 @@ private:
     MeasurementWorker *measurementWorker_ = nullptr;
     ResultWriter resultWriter_;
     QTimer *fullFrameTimer_ = nullptr;
-    QTimer *roiTimer_ = nullptr;
     QTimer *statusTimer_ = nullptr;
     bool running_ = false;
 
     // Widget pointers created in buildLayout() with the plan's object names.
-    QLabel *fullFrameImageLabel_ = nullptr;
-    QLabel *roiAImageLabel_ = nullptr;
-    QLabel *roiBImageLabel_ = nullptr;
-    QLabel *starAStatusLabel_ = nullptr;
-    QLabel *starBStatusLabel_ = nullptr;
+    ZoomableImageView *fullFrameImageView_ = nullptr;
+    QLabel *starCentroidStatusLabel_ = nullptr;
     QLabel *hardwareAoiStatusLabel_ = nullptr;
+    QLabel *cameraRateLabel_ = nullptr;
     QLabel *measurementRateLabel_ = nullptr;
     QLabel *validFrameCountLabel_ = nullptr;
     QProgressBar *windowProgressBar_ = nullptr;
@@ -89,7 +86,7 @@ private:
     QPushButton *disconnectCameraButton_ = nullptr;
     QPushButton *startAcquisitionButton_ = nullptr;
     QPushButton *stopAcquisitionButton_ = nullptr;
-    QLabel *roiTrackingStateLabel_ = nullptr;
+    QLabel *starTrackingStateLabel_ = nullptr;
     QLabel *droppedFramesLabel_ = nullptr;
     QLabel *lastErrorLabel_ = nullptr;
     QPlainTextEdit *logEdit_ = nullptr;

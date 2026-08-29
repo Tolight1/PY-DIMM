@@ -6,23 +6,109 @@
 
 #include <QDateTime>
 #include <QFrame>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
+#include <QGraphicsView>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPixmap>
 #include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QSettings>
 #include <QScrollBar>
 #include <QStringList>
 #include <QSplitter>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QWheelEvent>
 
 #include <algorithm>
 #include <cmath>
+
+class ZoomableImageView final : public QGraphicsView {
+public:
+    explicit ZoomableImageView(QWidget *parent = nullptr)
+        : QGraphicsView(parent)
+        , scene_(new QGraphicsScene(this))
+        , pixmapItem_(scene_->addPixmap(QPixmap()))
+    {
+        setScene(scene_);
+        setObjectName(QStringLiteral("fullFrameImageView"));
+        setBackgroundBrush(Qt::black);
+        setFrameShape(QFrame::NoFrame);
+        setAlignment(Qt::AlignCenter);
+        setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+        setResizeAnchor(QGraphicsView::AnchorViewCenter);
+        setDragMode(QGraphicsView::ScrollHandDrag);
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        setToolTip(QStringLiteral("鼠标滚轮缩放，双击恢复适应窗口；放大后可拖动画面"));
+    }
+
+    void setImage(const QImage &image)
+    {
+        if (image.isNull())
+            return;
+        pixmapItem_->setPixmap(QPixmap::fromImage(image));
+        scene_->setSceneRect(pixmapItem_->boundingRect());
+        if (!userZoomed_)
+            fitToWindow();
+    }
+
+    void fitToWindow()
+    {
+        if (pixmapItem_->pixmap().isNull())
+            return;
+        userZoomed_ = false;
+        fitInView(pixmapItem_, Qt::KeepAspectRatio);
+    }
+
+protected:
+    void wheelEvent(QWheelEvent *event) override
+    {
+        if (pixmapItem_->pixmap().isNull() || event->angleDelta().y() == 0) {
+            QGraphicsView::wheelEvent(event);
+            return;
+        }
+
+        const qreal factor = event->angleDelta().y() > 0 ? 1.15 : (1.0 / 1.15);
+        const qreal nextScale = transform().m11() * factor;
+        if (nextScale < 0.10 || nextScale > 8.0) {
+            event->accept();
+            return;
+        }
+        userZoomed_ = true;
+        scale(factor, factor);
+        event->accept();
+    }
+
+    void mouseDoubleClickEvent(QMouseEvent *event) override
+    {
+        if (event->button() == Qt::LeftButton) {
+            fitToWindow();
+            event->accept();
+            return;
+        }
+        QGraphicsView::mouseDoubleClickEvent(event);
+    }
+
+    void resizeEvent(QResizeEvent *event) override
+    {
+        QGraphicsView::resizeEvent(event);
+        if (!userZoomed_)
+            fitToWindow();
+    }
+
+private:
+    QGraphicsScene *scene_ = nullptr;
+    QGraphicsPixmapItem *pixmapItem_ = nullptr;
+    bool userZoomed_ = false;
+};
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -54,8 +140,6 @@ MainWindow::MainWindow(QWidget *parent)
     fullFrameTimer_ = new QTimer(this);
     connect(fullFrameTimer_, &QTimer::timeout, this,
             &MainWindow::refreshFullFramePreview);
-    roiTimer_ = new QTimer(this);
-    connect(roiTimer_, &QTimer::timeout, this, &MainWindow::refreshRoiPreview);
     statusTimer_ = new QTimer(this);
     connect(statusTimer_, &QTimer::timeout, this,
             &MainWindow::refreshStatusSnapshot);
@@ -120,8 +204,14 @@ void MainWindow::setupThreads()
             &MainWindow::onResultReady);
     connect(measurementWorker_, &MeasurementWorker::measurementStatusReady,
             this, &MainWindow::onMeasurementStatusReady);
-    connect(measurementWorker_, &MeasurementWorker::roiStateChanged, this,
-            &MainWindow::onRoiStateChanged);
+    connect(measurementWorker_, &MeasurementWorker::aoiEvent, this,
+            [this](AoiEvent event) { resultWriter_.appendAoiEvent(event); });
+    connect(measurementWorker_, &MeasurementWorker::aoiTransitionSample, this,
+            [this](AoiTransitionSample sample) {
+                resultWriter_.appendAoiTransitionSample(sample);
+            });
+    connect(measurementWorker_, &MeasurementWorker::starStateChanged, this,
+            &MainWindow::onStarStateChanged);
     connect(measurementWorker_, &MeasurementWorker::measurementStatsUpdated,
             this, &MainWindow::onMeasurementStatsUpdated);
     connect(measurementWorker_, &MeasurementWorker::measurementError, this,
@@ -215,7 +305,6 @@ void MainWindow::onStartClicked()
 
     updateTimerIntervals();
     fullFrameTimer_->start();
-    roiTimer_->start();
     statusTimer_->start();
 
     updateControlsForState(true);
@@ -261,24 +350,7 @@ void MainWindow::refreshFullFramePreview()
         return;
     image = ImageDisplayAdapter::drawOverlay(image, snap.overlay,
                                              image.rect());
-    fullFrameImageLabel_->setPixmap(QPixmap::fromImage(image));
-}
-
-void MainWindow::refreshRoiPreview()
-{
-    DisplaySnapshot snap;
-    if (!displayMailbox_.tryTake(snap))
-        return;
-    if (!snap.roiAMono8.empty()) {
-        const QImage image = ImageDisplayAdapter::toGrayImage(snap.roiAMono8);
-        if (!image.isNull())
-            roiAImageLabel_->setPixmap(QPixmap::fromImage(image));
-    }
-    if (!snap.roiBMono8.empty()) {
-        const QImage image = ImageDisplayAdapter::toGrayImage(snap.roiBMono8);
-        if (!image.isNull())
-            roiBImageLabel_->setPixmap(QPixmap::fromImage(image));
-    }
+    fullFrameImageView_->setImage(image);
 }
 
 void MainWindow::refreshStatusSnapshot()
@@ -330,7 +402,6 @@ void MainWindow::onCameraReady(CameraCapabilities capabilities)
                                  capabilityErrors.join(QLatin1Char('\n')));
             running_ = false;
             fullFrameTimer_->stop();
-            roiTimer_->stop();
             statusTimer_->stop();
             updateControlsForState(false);
             stopThreads();
@@ -342,7 +413,6 @@ void MainWindow::onCameraReady(CameraCapabilities capabilities)
             QMessageBox::warning(this, tr("无法开始数据记录"), error);
             running_ = false;
             fullFrameTimer_->stop();
-            roiTimer_->stop();
             statusTimer_->stop();
             updateControlsForState(false);
             stopThreads();
@@ -356,6 +426,10 @@ void MainWindow::onCameraDisconnected()
     lastCapabilities_ = CameraCapabilities{};
     cameraStateLabel_->setText(tr("相机：未连接"));
     acquisitionStateLabel_->setText(tr("采集状态：已停止"));
+    cameraRateLabel_->setText(tr("相机采集率：实际 -- / 目标 -- / 预计 -- Hz"));
+    cameraRateLabel_->setStyleSheet(QString());
+    measurementRateLabel_->setText(tr("有效测量率：-- Hz"));
+    measurementRateLabel_->setStyleSheet(QString());
     updateControlsForState(false);
     appendLog(tr("相机已断开"));
 }
@@ -363,28 +437,38 @@ void MainWindow::onCameraDisconnected()
 void MainWindow::onCameraStatsUpdated(CameraStatistics stats)
 {
     lastCameraStats_ = stats;
+    if (cameraRateLabel_) {
+        cameraRateLabel_->setText(
+            tr("相机采集率：实际 %1 / 目标 %2 / 预计 %3 Hz")
+                .arg(stats.acquisitionRateHz, 0, 'f', 1)
+                .arg(stats.targetRateHz, 0, 'f', 1)
+                .arg(stats.resultingFrameRateHz, 0, 'f', 1));
+        cameraRateLabel_->setStyleSheet(
+            stats.acquisitionRateHz > 0.0
+                ? QStringLiteral("color:#33d17a;") : QString());
+    }
     if (cameraReady_ && !stats.lastError.isEmpty()) {
         cameraStateLabel_->setText(tr("相机错误：%1").arg(stats.lastError));
+    } else if (cameraReady_ && !stats.rateDiagnostic.isEmpty()) {
+        cameraStateLabel_->setText(
+            tr("相机速率提示：%1").arg(stats.rateDiagnostic));
     }
     resultWriter_.appendCameraStats(stats);
 }
 
-void MainWindow::onRoiStateChanged(RoiOverlay overlay)
+void MainWindow::onStarStateChanged(DisplayOverlay overlay)
 {
-    if (overlay.hasRois) {
-        starAStatusLabel_->setText(
-            tr("StarA：(%1, %2)")
+    if (overlay.hasCentroids) {
+        starCentroidStatusLabel_->setText(
+            tr("StarA：(%1, %2)\nStarB：(%3, %4)")
                 .arg(overlay.starA.x(), 0, 'f', 1)
-                .arg(overlay.starA.y(), 0, 'f', 1));
-        starBStatusLabel_->setText(
-            tr("StarB：(%1, %2)")
+                .arg(overlay.starA.y(), 0, 'f', 1)
                 .arg(overlay.starB.x(), 0, 'f', 1)
                 .arg(overlay.starB.y(), 0, 'f', 1));
-        roiTrackingStateLabel_->setText(tr("ROI 跟踪：跟踪中"));
+        starTrackingStateLabel_->setText(tr("双星跟踪：跟踪中"));
     } else {
-        starAStatusLabel_->setText(tr("StarA：未定位"));
-        starBStatusLabel_->setText(tr("StarB：未定位"));
-        roiTrackingStateLabel_->setText(tr("ROI 跟踪：定位中"));
+        starCentroidStatusLabel_->setText(tr("StarA：未定位\nStarB：未定位"));
+        starTrackingStateLabel_->setText(tr("双星跟踪：定位中"));
     }
 
     if (overlay.hasHardwareAoi) {
@@ -402,12 +486,10 @@ void MainWindow::onRoiStateChanged(RoiOverlay overlay)
 void MainWindow::onMeasurementStatsUpdated(double measuredRateHz,
                                            std::uint64_t validPairs)
 {
-    const double required = config_.acquisition.measurementRateHz;
-    const bool gatePassed = measuredRateHz >= required;
     measurementRateLabel_->setText(
-        tr("实际测量率：%1 Hz").arg(measuredRateHz, 0, 'f', 1));
+        tr("有效测量率：%1 Hz").arg(measuredRateHz, 0, 'f', 1));
     measurementRateLabel_->setStyleSheet(
-        gatePassed ? QStringLiteral("color:#33d17a;")
+        measuredRateHz > 0.0 ? QStringLiteral("color:#33d17a;")
                    : QStringLiteral("color:#ffb454;"));
     const int windowFrames = config_.processing.r0WindowFrames;
     const int windowPairs = static_cast<int>(qMin<std::uint64_t>(
@@ -434,7 +516,6 @@ void MainWindow::onCameraError(QString message)
         // the run. Failures after cameraReady are transient and only logged.
         running_ = false;
         fullFrameTimer_->stop();
-        roiTimer_->stop();
         statusTimer_->stop();
         resultWriter_.finishRun();
         updateControlsForState(false);
@@ -458,11 +539,12 @@ void MainWindow::onWorkerStopped(bool cameraWorker)
         measurementStopped_ = false;
         resultWriter_.finishRun();
         fullFrameTimer_->stop();
-        roiTimer_->stop();
         statusTimer_->stop();
         updateControlsForState(false);
         acquisitionStateLabel_->setText(tr("采集状态：已停止"));
-        measurementRateLabel_->setText(tr("实际测量率：-- Hz"));
+        cameraRateLabel_->setText(tr("相机采集率：实际 -- / 目标 -- / 预计 -- Hz"));
+        cameraRateLabel_->setStyleSheet(QString());
+        measurementRateLabel_->setText(tr("有效测量率：-- Hz"));
         measurementRateLabel_->setStyleSheet(QString());
         appendLog(tr("采集已停止"));
     }
@@ -525,9 +607,7 @@ void MainWindow::updateControlsForState(bool running)
 void MainWindow::updateTimerIntervals()
 {
     fullFrameTimer_->setInterval(qMax(
-        1, qRound(1000.0 / config_.acquisition.fullFramePreviewRateHz)));
-    roiTimer_->setInterval(
-        qMax(1, qRound(1000.0 / config_.acquisition.roiPreviewRateHz)));
+        1, qRound(1000.0 / config_.acquisition.previewRateHz)));
     statusTimer_->setInterval(400);
 }
 
@@ -572,7 +652,13 @@ void MainWindow::buildLayout()
     cameraStateLabel_->setProperty("statusBadge", true);
     topBar->addWidget(cameraStateLabel_);
 
-    measurementRateLabel_ = new QLabel(tr("实际测量率：-- Hz"), central);
+    cameraRateLabel_ = new QLabel(
+        tr("相机采集率：实际 -- / 目标 -- / 预计 -- Hz"), central);
+    cameraRateLabel_->setObjectName(QStringLiteral("cameraRateLabel"));
+    cameraRateLabel_->setProperty("statusBadge", true);
+    topBar->addWidget(cameraRateLabel_);
+
+    measurementRateLabel_ = new QLabel(tr("有效测量率：-- Hz"), central);
     measurementRateLabel_->setObjectName(QStringLiteral("measurementRateLabel"));
     measurementRateLabel_->setProperty("statusBadge", true);
     topBar->addWidget(measurementRateLabel_);
@@ -603,8 +689,8 @@ void MainWindow::buildLayout()
     topBar->addWidget(stopAcquisitionButton_);
     rootLayout->addLayout(topBar);
 
-    // Central splitter: full-frame preview on the left, result cards and ROI
-    // previews on the right.
+    // Central splitter: full-frame preview on the left, result cards and
+    // centroid status on the right.
     auto *splitter = new QSplitter(Qt::Horizontal, central);
     splitter->setObjectName(QStringLiteral("mainSplitter"));
     splitter->setHandleWidth(8);
@@ -619,16 +705,13 @@ void MainWindow::buildLayout()
     previewTitle->setProperty("sectionTitle", true);
     previewLayout->addWidget(previewTitle);
     auto *previewMeta = new QLabel(
-        QStringLiteral("1920 × 1200 · Mono8 · 实时画面"), previewFrame);
+        QStringLiteral("1920 × 1200 · Mono8 · AOI区域实时，区域外保持最近全画幅 · 滚轮缩放，双击适应窗口"),
+        previewFrame);
     previewMeta->setProperty("sectionMeta", true);
     previewLayout->addWidget(previewMeta);
-    fullFrameImageLabel_ = new QLabel(previewFrame);
-    fullFrameImageLabel_->setObjectName(QStringLiteral("fullFrameImageLabel"));
-    fullFrameImageLabel_->setAlignment(Qt::AlignCenter);
-    fullFrameImageLabel_->setMinimumSize(640, 400);
-    fullFrameImageLabel_->setText(tr("全画幅 1920 × 1200"));
-    fullFrameImageLabel_->setScaledContents(true);
-    previewLayout->addWidget(fullFrameImageLabel_);
+    fullFrameImageView_ = new ZoomableImageView(previewFrame);
+    fullFrameImageView_->setMinimumSize(640, 400);
+    previewLayout->addWidget(fullFrameImageView_);
     splitter->addWidget(previewFrame);
 
     auto *rightPanel = new QFrame(splitter);
@@ -700,48 +783,22 @@ void MainWindow::buildLayout()
     resultLayout->addWidget(measurementStateLabel_, 4, 0, 1, 4);
     rightLayout->addWidget(resultCard);
 
-    // ROI A and ROI B previews.
-    auto *roiTitle = new QLabel(QStringLiteral("目标 ROI 与质心状态"), rightPanel);
-    roiTitle->setProperty("sectionTitle", true);
-    rightLayout->addWidget(roiTitle);
-    auto *roiRow = new QHBoxLayout;
-    roiRow->setSpacing(10);
-    auto *roiAFrame = new QFrame(rightPanel);
-    roiAFrame->setProperty("panel", true);
-    roiAFrame->setProperty("panelRole", "roi");
-    auto *roiALayout = new QVBoxLayout(roiAFrame);
-    roiALayout->setContentsMargins(8, 8, 8, 8);
-    roiALayout->setSpacing(6);
-    roiAImageLabel_ = new QLabel(roiAFrame);
-    roiAImageLabel_->setObjectName(QStringLiteral("roiAImageLabel"));
-    roiAImageLabel_->setAlignment(Qt::AlignCenter);
-    roiAImageLabel_->setMinimumSize(160, 160);
-    roiAImageLabel_->setText(tr("ROI A 64 × 64"));
-    roiAImageLabel_->setScaledContents(true);
-    starAStatusLabel_ = new QLabel(tr("StarA：未定位"), roiAFrame);
-    starAStatusLabel_->setObjectName(QStringLiteral("starAStatusLabel"));
-    roiALayout->addWidget(roiAImageLabel_);
-    roiALayout->addWidget(starAStatusLabel_);
-    roiRow->addWidget(roiAFrame);
-
-    auto *roiBFrame = new QFrame(rightPanel);
-    roiBFrame->setProperty("panel", true);
-    roiBFrame->setProperty("panelRole", "roi");
-    auto *roiBLayout = new QVBoxLayout(roiBFrame);
-    roiBLayout->setContentsMargins(8, 8, 8, 8);
-    roiBLayout->setSpacing(6);
-    roiBImageLabel_ = new QLabel(roiBFrame);
-    roiBImageLabel_->setObjectName(QStringLiteral("roiBImageLabel"));
-    roiBImageLabel_->setAlignment(Qt::AlignCenter);
-    roiBImageLabel_->setMinimumSize(160, 160);
-    roiBImageLabel_->setText(tr("ROI B 64 × 64"));
-    roiBImageLabel_->setScaledContents(true);
-    starBStatusLabel_ = new QLabel(tr("StarB：未定位"), roiBFrame);
-    starBStatusLabel_->setObjectName(QStringLiteral("starBStatusLabel"));
-    roiBLayout->addWidget(roiBImageLabel_);
-    roiBLayout->addWidget(starBStatusLabel_);
-    roiRow->addWidget(roiBFrame);
-    rightLayout->addLayout(roiRow);
+    auto *centroidTitle = new QLabel(QStringLiteral("双星质心状态"), rightPanel);
+    centroidTitle->setProperty("sectionTitle", true);
+    rightLayout->addWidget(centroidTitle);
+    auto *centroidFrame = new QFrame(rightPanel);
+    centroidFrame->setProperty("panel", true);
+    centroidFrame->setProperty("panelRole", "centroid");
+    auto *centroidLayout = new QVBoxLayout(centroidFrame);
+    centroidLayout->setContentsMargins(12, 12, 12, 12);
+    centroidLayout->setSpacing(8);
+    starCentroidStatusLabel_ = new QLabel(
+        tr("StarA：未定位\nStarB：未定位"), centroidFrame);
+    starCentroidStatusLabel_->setObjectName(
+        QStringLiteral("starCentroidStatusLabel"));
+    starCentroidStatusLabel_->setWordWrap(true);
+    centroidLayout->addWidget(starCentroidStatusLabel_);
+    rightLayout->addWidget(centroidFrame);
     rightLayout->addStretch();
 
     splitter->addWidget(rightPanel);
@@ -749,7 +806,7 @@ void MainWindow::buildLayout()
     splitter->setStretchFactor(1, 42);
     rootLayout->addWidget(splitter, 1);
 
-    // Bottom diagnostic surface: log, ROI/AOI status, drop counters, last error.
+    // Bottom diagnostic surface: log, star/AOI status, drop counters, last error.
     auto *diagnosticFrame = new QFrame(central);
     diagnosticFrame->setProperty("panel", true);
     diagnosticFrame->setProperty("panelRole", "diagnostic");
@@ -781,9 +838,9 @@ void MainWindow::buildLayout()
     statusTitle->setProperty("sectionTitle", true);
     statusLayout->addWidget(statusTitle, 0, 0, 1, 2);
 
-    roiTrackingStateLabel_ = new QLabel(tr("ROI 跟踪：未开始"), statusPanel);
-    roiTrackingStateLabel_->setObjectName(
-        QStringLiteral("roiTrackingStateLabel"));
+    starTrackingStateLabel_ = new QLabel(tr("双星跟踪：未开始"), statusPanel);
+    starTrackingStateLabel_->setObjectName(
+        QStringLiteral("starTrackingStateLabel"));
     hardwareAoiStatusLabel_ = new QLabel(tr("AOI：全画幅"), statusPanel);
     hardwareAoiStatusLabel_->setObjectName(
         QStringLiteral("hardwareAoiStatusLabel"));
@@ -794,13 +851,13 @@ void MainWindow::buildLayout()
     lastErrorLabel_ = new QLabel(tr("最后错误：-"), statusPanel);
     lastErrorLabel_->setObjectName(QStringLiteral("lastErrorLabel"));
 
-    for (QLabel *label : {roiTrackingStateLabel_, hardwareAoiStatusLabel_,
+    for (QLabel *label : {starTrackingStateLabel_, hardwareAoiStatusLabel_,
                           droppedFramesLabel_, queueDroppedLabel_,
                           lastErrorLabel_}) {
         label->setProperty("statusBadge", true);
         label->setWordWrap(true);
     }
-    statusLayout->addWidget(roiTrackingStateLabel_, 1, 0);
+    statusLayout->addWidget(starTrackingStateLabel_, 1, 0);
     statusLayout->addWidget(hardwareAoiStatusLabel_, 1, 1);
     statusLayout->addWidget(droppedFramesLabel_, 2, 0);
     statusLayout->addWidget(queueDroppedLabel_, 2, 1);

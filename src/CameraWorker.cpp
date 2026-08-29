@@ -73,7 +73,7 @@ void CameraWorker::start()
         return;
     }
     // Start in full-frame mode. The measurement worker locates the two spots,
-    // then requests one enclosing hardware AOI after both software ROIs exist.
+    // then requests one enclosing hardware AOI around their centroid windows.
     if (!camera_.resetToFullFrame(&error)) {
         emit cameraError(error);
         running_ = false;
@@ -111,7 +111,8 @@ void CameraWorker::applyHardwareAoi(RoiRect aoi, std::uint64_t generation)
 {
     Q_UNUSED(generation);
     QString error;
-    if (!camera_.configureHardwareAoi(aoi, &error)) {
+    RoiRect appliedAoi;
+    if (!camera_.configureHardwareAoi(aoi, &error, &appliedAoi)) {
         QString recoveryError;
         camera_.resetToFullFrame(&recoveryError);
         camera_.startGrabbing(&recoveryError);
@@ -125,8 +126,10 @@ void CameraWorker::applyHardwareAoi(RoiRect aoi, std::uint64_t generation)
         emit cameraError(error);
     }
     // Frames produced after this point are tagged with the new generation so
-    // the measurement worker can discard frames from the previous AOI.
-    emit hardwareAoiApplied(aoi, camera_.configurationGeneration());
+    // the measurement worker can discard frames from the previous AOI.  The
+    // rectangle must be the camera readback, not the request: increment
+    // alignment and camera-side clamping can change it.
+    emit hardwareAoiApplied(appliedAoi, camera_.configurationGeneration());
 }
 
 void CameraWorker::requestFullFrame()
@@ -141,7 +144,7 @@ void CameraWorker::requestFullFrame()
                                           &error)) {
         emit cameraError(error);
     }
-    emit hardwareAoiApplied(RoiRect{0, 0, 1920, 1200},
+    emit hardwareAoiApplied(camera_.activeHardwareAoi(),
                             camera_.configurationGeneration());
 }
 
@@ -167,11 +170,12 @@ void CameraWorker::onFrame(CameraFrame frame)
 
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
 
-    // Full-frame display preview at ~fullFramePreviewRateHz. Once the hardware
-    // AOI is active the measurement worker owns the display snapshots.
+    // Full-frame display preview at the configured preview rate. Once the
+    // hardware AOI is active the measurement worker patches the live AOI into
+    // the latest full-frame canvas.
     if (isFullFrame) {
         const qint64 intervalMs = qMax<qint64>(
-            qint64(1), qRound(1000.0 / config_.acquisition.fullFramePreviewRateHz));
+            qint64(1), qRound(1000.0 / config_.acquisition.previewRateHz));
         if (now - lastFullFrameDisplayMs_ >= intervalMs) {
             lastFullFrameDisplayMs_ = now;
             DisplaySnapshot snap;

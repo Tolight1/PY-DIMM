@@ -27,7 +27,8 @@ public:
     bool configureExposure(double exposureTimeMs, QString *error);
     bool configureAcquisitionRate(double frameRateHz, QString *error);
     bool configureTrigger(const TriggerConfig &config, QString *error);
-    bool configureHardwareAoi(const RoiRect &aoi, QString *error);
+    bool configureHardwareAoi(const RoiRect &aoi, QString *error,
+                              RoiRect *appliedAoi = nullptr);
     bool resetToFullFrame(QString *error);
 
     bool startGrabbing(QString *error);
@@ -40,6 +41,11 @@ public:
     // Generation of the active hardware AOI. Incremented whenever the AOI is
     // reconfigured so frames from an old AOI can be identified and discarded.
     std::uint64_t configurationGeneration() const;
+
+    // Returns the last AOI read back from the camera, in full-sensor
+    // coordinates.  The requested rectangle may differ after increment
+    // alignment or camera-side clamping.
+    RoiRect activeHardwareAoi() const;
 
 private:
     class Impl;

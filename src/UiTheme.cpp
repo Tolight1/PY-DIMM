@@ -50,7 +50,6 @@ QString styleSheet()
         "QFrame[panelRole=\"canvas\"] { background: %6; border-color: %3; }"
         "QFrame[panelRole=\"result\"] { background: %11; border-color: %12; }"
         "QFrame[panelRole=\"diagnostic\"] { background: %11; border-color: %8; }"
-        "QFrame[panelRole=\"roi\"] { background: %7; border-color: %8; }"
         "QPushButton { background: %7; color: %2; border: 1px solid %8;"
         "          border-radius: 6px; padding: 7px 13px; min-height: 18px; }"
         "QPushButton:hover { background: %11; border-color: %3; }"
