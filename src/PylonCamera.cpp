@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <deque>
 #include <functional>
 
 namespace {
@@ -86,6 +87,7 @@ public:
 
     mutable QMutex statsMutex_;
     CameraStatistics stats_;
+    std::deque<std::int64_t> acquisitionTimestampsNs_;
 
     bool open_ = false;
     bool grabbing_ = false;
@@ -160,7 +162,19 @@ public:
             ++callbackCount_;
             stats_.averageCallbackMs = averageCallbackSumMs_ /
                                        static_cast<double>(callbackCount_);
-            stats_.measuredRateHz = 0.0; // measured in MeasurementWorker
+            acquisitionTimestampsNs_.push_back(frame.timestampNs);
+            while (acquisitionTimestampsNs_.size() > 100)
+                acquisitionTimestampsNs_.pop_front();
+            if (acquisitionTimestampsNs_.size() >= 2) {
+                const double elapsedSec = static_cast<double>(
+                    acquisitionTimestampsNs_.back() -
+                    acquisitionTimestampsNs_.front()) * 1.0e-9;
+                if (elapsedSec > 0.0) {
+                    stats_.acquisitionRateHz =
+                        (static_cast<double>(acquisitionTimestampsNs_.size()) - 1.0) /
+                        elapsedSec;
+                }
+            }
         }
 
         if (callback_)
@@ -354,16 +368,48 @@ bool PylonCamera::configureAcquisitionRate(double frameRateHz, QString *error)
             const double maximum = rate->GetMax();
             const double accepted = std::clamp(frameRateHz, minimum, maximum);
             rate->SetValue(accepted);
-            if (std::abs(accepted - frameRateHz) > 0.01 && error) {
-            *error = QStringLiteral("相机采集帧率范围为 %1～%2 Hz，无法完全达到 %3 Hz")
-                             .arg(minimum, 0, 'f', 1)
-                             .arg(maximum, 0, 'f', 1)
-                             .arg(frameRateHz, 0, 'f', 1);
-                return false;
+            const double applied = rate->GetValue();
+            double resulting = 0.0;
+            GenApi::CFloatPtr resultingNode(
+                nodeMap.GetNode("ResultingFrameRateAbs"));
+            if (GenApi::IsReadable(resultingNode))
+                resulting = resultingNode->GetValue();
+
+            QString diagnostic;
+            if (std::abs(applied - frameRateHz) > 0.01) {
+                diagnostic = QStringLiteral(
+                    "目标 %1 Hz 超出 AcquisitionFrameRate 可设置范围 %2～%3 Hz，已应用 %4 Hz")
+                                 .arg(frameRateHz, 0, 'f', 1)
+                                 .arg(minimum, 0, 'f', 1)
+                                 .arg(maximum, 0, 'f', 1)
+                                 .arg(applied, 0, 'f', 1);
             }
-            return true;
+            if (resulting > 0.0 && resulting + 0.01 < frameRateHz) {
+                if (!diagnostic.isEmpty())
+                    diagnostic += QStringLiteral("；");
+                diagnostic += QStringLiteral(
+                    "ResultingFrameRateAbs 预计上限为 %1 Hz（受曝光、AOI 或相机带宽参数限制）")
+                                  .arg(resulting, 0, 'f', 1);
+            }
+
+            {
+                QMutexLocker lock(&impl_->statsMutex_);
+                impl_->stats_.targetRateHz = frameRateHz;
+                impl_->stats_.resultingFrameRateHz = resulting;
+                impl_->stats_.rateDiagnostic = diagnostic;
+            }
+            if (!diagnostic.isEmpty() && error)
+                *error = diagnostic;
+            return std::abs(applied - frameRateHz) <= 0.01;
         }
 
+        {
+            QMutexLocker lock(&impl_->statsMutex_);
+            impl_->stats_.targetRateHz = frameRateHz;
+            impl_->stats_.resultingFrameRateHz = 0.0;
+            impl_->stats_.rateDiagnostic =
+                QStringLiteral("相机不支持 AcquisitionFrameRate 节点");
+        }
         if (error)
             *error = QStringLiteral("相机不支持 AcquisitionFrameRate 节点");
         return false;
@@ -436,7 +482,8 @@ RoiRect alignAoiToIncrements(const RoiRect &aoi, int sensorWidth, int sensorHeig
 }
 } // namespace
 
-bool PylonCamera::configureHardwareAoi(const RoiRect &aoi, QString *error)
+bool PylonCamera::configureHardwareAoi(const RoiRect &aoi, QString *error,
+                                       RoiRect *appliedAoi)
 {
     try {
         if (!isOpen()) {
@@ -471,6 +518,7 @@ bool PylonCamera::configureHardwareAoi(const RoiRect &aoi, QString *error)
         impl_->camera_.OffsetY.SetValue(aligned.y);
 
         // Read back the values the camera actually accepted.
+        RoiRect actual;
         {
             QMutexLocker lock(&impl_->statsMutex_);
             impl_->currentSourceRect_ = QRect(
@@ -478,8 +526,15 @@ bool PylonCamera::configureHardwareAoi(const RoiRect &aoi, QString *error)
                 static_cast<int>(impl_->camera_.OffsetY.GetValue()),
                 static_cast<int>(impl_->camera_.Width.GetValue()),
                 static_cast<int>(impl_->camera_.Height.GetValue()));
+            actual = RoiRect{impl_->currentSourceRect_.x(),
+                             impl_->currentSourceRect_.y(),
+                             impl_->currentSourceRect_.width(),
+                             impl_->currentSourceRect_.height()};
             ++impl_->configurationGeneration_;
         }
+
+        if (appliedAoi)
+            *appliedAoi = actual;
 
         if (wasGrabbing)
             impl_->startGrabbingInternal();
@@ -591,4 +646,13 @@ std::uint64_t PylonCamera::configurationGeneration() const
 {
     QMutexLocker lock(&impl_->statsMutex_);
     return impl_->configurationGeneration_;
+}
+
+RoiRect PylonCamera::activeHardwareAoi() const
+{
+    QMutexLocker lock(&impl_->statsMutex_);
+    return RoiRect{impl_->currentSourceRect_.x(),
+                   impl_->currentSourceRect_.y(),
+                   impl_->currentSourceRect_.width(),
+                   impl_->currentSourceRect_.height()};
 }

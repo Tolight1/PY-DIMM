@@ -16,6 +16,8 @@ public:
                   const CameraCapabilities &capabilities,
                   QString *error);
     void append(const MeasurementResult &result);
+    void appendAoiEvent(const AoiEvent &event);
+    void appendAoiTransitionSample(const AoiTransitionSample &sample);
     void appendCameraStats(const CameraStatistics &stats);
     void finishRun();
     bool isRunning() const;
@@ -26,6 +28,8 @@ private:
     QFile atmosphereFile_;
     QFile centroidFile_;
     QFile diagnosticsFile_;
+    QFile aoiEventsFile_;
+    QFile aoiTransitionSamplesFile_;
     bool running_ = false;
     double resultRecordIntervalSec_ = 1.0;
     qint64 lastResultRecordMs_ = -1;

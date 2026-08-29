@@ -3,6 +3,23 @@
 
 #include <QSettings>
 
+#include <cmath>
+
+namespace {
+
+constexpr int kAppConfigVersion = 2;
+constexpr double legacySubApertureDiameterMm = 60.0;
+constexpr double legacyBaselineSeparationMm = 150.0;
+constexpr double legacyZenithAngleDeg = 0.0;
+constexpr double kConfigValueEpsilon = 1.0e-9;
+
+bool isLegacyDefault(double value, double legacyValue)
+{
+    return std::abs(value - legacyValue) <= kConfigValueEpsilon;
+}
+
+}
+
 AppConfig AppConfig::defaults()
 {
     AppConfig config;
@@ -27,6 +44,8 @@ QStringList AppConfig::validate() const
         errors << QStringLiteral("子孔径直径必须大于 0 mm");
     if (optical.baselineSeparationMm <= 0.0)
         errors << QStringLiteral("两个圆形窗口中心距离必须大于 0 mm");
+    if (!std::isfinite(optical.baselineAngleDeg))
+        errors << QStringLiteral("基线方向角必须是有限数值");
     if (optical.focalLengthMm <= 0.0)
         errors << QStringLiteral("望远镜焦距必须大于 0 mm");
     if (optical.wavelengthNm <= 0.0)
@@ -38,20 +57,15 @@ QStringList AppConfig::validate() const
         errors << QStringLiteral("当前版本仅允许 1920 × 1200 全画幅");
     if (acquisition.pixelFormat != PixelFormat::Mono8)
         errors << QStringLiteral("当前版本仅允许 Mono8");
-    if (acquisition.measurementRateHz < 100.0)
-        errors << QStringLiteral("测量采样率必须至少为 100 Hz");
-    if (acquisition.fullFramePreviewRateHz <= 0.0 ||
-        acquisition.roiPreviewRateHz <= 0.0)
+    if (acquisition.measurementRateHz <= 0.0)
+        errors << QStringLiteral("测量采样率必须大于 0 Hz");
+    if (acquisition.previewRateHz <= 0.0)
         errors << QStringLiteral("预览刷新率必须大于 0 Hz");
     if (acquisition.exposureTimeMs <= 0.0 || acquisition.exposureTimeMs > 10.0)
         errors << QStringLiteral("单次曝光时间必须在 (0, 10] ms 范围内");
     if (acquisition.targetSampleCount <= 0 || acquisition.targetDurationSec <= 0.0)
         errors << QStringLiteral("目标采样数和目标时长必须大于 0");
 
-    if (processing.roiWidthPx < 16 || processing.roiHeightPx < 16)
-        errors << QStringLiteral("软件 ROI 至少为 16 × 16 像素");
-    if (processing.otsuHistogramBins < 256 || processing.otsuHistogramBins > 16384)
-        errors << QStringLiteral("Otsu 直方图分箱数必须在 256 至 16384 之间");
     if (processing.otsuSigmaThreshold < 0.0 || processing.otsuSigmaThreshold > 20.0)
         errors << QStringLiteral("Otsu sigma threshold must be between 0 and 20");
     if (processing.otsuPeakFraction < 0.01 || processing.otsuPeakFraction > 0.95)
@@ -61,8 +75,15 @@ QStringList AppConfig::validate() const
     if (processing.otsuMinimumComponentAreaPx < ConnectedDomain::kMinimumComponentArea ||
         processing.otsuMaximumComponentAreaPx < processing.otsuMinimumComponentAreaPx)
         errors << QStringLiteral("连通域面积范围无效");
-    if (processing.smallKernelRadiusPx < 1 || processing.smallKernelRadiusPx > 20)
-        errors << QStringLiteral("小核半径必须在 1 至 20 像素之间");
+    if (processing.centroidKernelRadiusPx < 1 ||
+        processing.centroidKernelRadiusPx > 20)
+        errors << QStringLiteral("质心计算核半径必须在 1 至 20 像素之间");
+    if (processing.minimumPeakDistancePx <= 0.0)
+        errors << QStringLiteral("候选最小间距基准必须大于 0 px");
+    if (processing.maximumDifferentialJumpPx <= 0.0)
+        errors << QStringLiteral("双星差分最大跳变量必须大于 0 px");
+    if (processing.differentialBaselineViolationFrames < 1)
+        errors << QStringLiteral("双星差分基线连续偏离帧数必须至少为 1");
     if (processing.r0WindowFrames < 2)
         errors << QStringLiteral("r0 计算窗口至少需要 2 个有效样本");
     if (processing.resultUpdateIntervalSec <= 0.0)
@@ -72,12 +93,13 @@ QStringList AppConfig::validate() const
         processing.tau0MinimumSamples < 2)
         errors << QStringLiteral("tau0 参数无效");
     if (processing.hardwareAoiMarginPx < 0 ||
-        processing.roiRecenteringDistanceToEdgePx < 1 ||
-        processing.roiRecenteringConsecutiveFrames < 1 ||
-        processing.roiRecenteringCooldownMs < 0 ||
-        processing.roiRecenteringMinimumShiftPx <= 0.0 ||
-        processing.roiLostRelocalizationFrames < 1)
-        errors << QStringLiteral("ROI 跟踪参数无效");
+        processing.hardwareAoiMaxWidthPx < 1 ||
+        processing.hardwareAoiMaxHeightPx < 1 ||
+        processing.hardwareAoiUpdateDistanceToEdgePx < 0 ||
+        processing.hardwareAoiUpdateMinimumShiftPx <= 0.0 ||
+        processing.hardwareAoiUpdateCooldownMs < 0 ||
+        processing.lostPairRelocalizationFrames < 1)
+        errors << QStringLiteral("硬件 AOI 和双星跟踪参数无效");
 
     if (static_cast<int>(trigger.mode) <
             static_cast<int>(TriggerMode::Continuous) ||
@@ -97,10 +119,13 @@ QStringList AppConfig::validate() const
 
 void AppConfig::save(QSettings &settings) const
 {
+    settings.setValue(QStringLiteral("configVersion"), kAppConfigVersion);
+
     settings.beginGroup(QStringLiteral("physical"));
     settings.setValue(QStringLiteral("mainTelescopeApertureMm"), optical.mainTelescopeApertureMm);
     settings.setValue(QStringLiteral("subApertureDiameterMm"), optical.subApertureDiameterMm);
     settings.setValue(QStringLiteral("baselineSeparationMm"), optical.baselineSeparationMm);
+    settings.setValue(QStringLiteral("baselineAngleDeg"), optical.baselineAngleDeg);
     settings.setValue(QStringLiteral("focalLengthMm"), optical.focalLengthMm);
     settings.setValue(QStringLiteral("wavelengthNm"), optical.wavelengthNm);
     settings.setValue(QStringLiteral("pixelSizeUm"), optical.pixelSizeUm);
@@ -111,8 +136,7 @@ void AppConfig::save(QSettings &settings) const
     settings.setValue(QStringLiteral("frameWidth"), acquisition.frameWidth);
     settings.setValue(QStringLiteral("frameHeight"), acquisition.frameHeight);
     settings.setValue(QStringLiteral("measurementRateHz"), acquisition.measurementRateHz);
-    settings.setValue(QStringLiteral("fullFramePreviewRateHz"), acquisition.fullFramePreviewRateHz);
-    settings.setValue(QStringLiteral("roiPreviewRateHz"), acquisition.roiPreviewRateHz);
+    settings.setValue(QStringLiteral("previewRateHz"), acquisition.previewRateHz);
     settings.setValue(QStringLiteral("exposureTimeMs"), acquisition.exposureTimeMs);
     settings.setValue(QStringLiteral("targetSampleCount"), acquisition.targetSampleCount);
     settings.setValue(QStringLiteral("targetDurationSec"), acquisition.targetDurationSec);
@@ -120,23 +144,29 @@ void AppConfig::save(QSettings &settings) const
     settings.endGroup();
 
     settings.beginGroup(QStringLiteral("processing"));
-    settings.setValue(QStringLiteral("roiWidthPx"), processing.roiWidthPx);
-    settings.setValue(QStringLiteral("roiHeightPx"), processing.roiHeightPx);
     settings.setValue(QStringLiteral("hardwareAoiMarginPx"), processing.hardwareAoiMarginPx);
-    settings.setValue(QStringLiteral("otsuHistogramBins"), processing.otsuHistogramBins);
+    settings.setValue(QStringLiteral("hardwareAoiMaxWidthPx"), processing.hardwareAoiMaxWidthPx);
+    settings.setValue(QStringLiteral("hardwareAoiMaxHeightPx"), processing.hardwareAoiMaxHeightPx);
+    settings.setValue(QStringLiteral("hardwareAoiUpdateDistanceToEdgePx"),
+                      processing.hardwareAoiUpdateDistanceToEdgePx);
+    settings.setValue(QStringLiteral("hardwareAoiUpdateMinimumShiftPx"),
+                      processing.hardwareAoiUpdateMinimumShiftPx);
+    settings.setValue(QStringLiteral("hardwareAoiUpdateCooldownMs"),
+                      processing.hardwareAoiUpdateCooldownMs);
     settings.setValue(QStringLiteral("otsuSigmaThreshold"), processing.otsuSigmaThreshold);
     settings.setValue(QStringLiteral("otsuPeakFraction"), processing.otsuPeakFraction);
     settings.setValue(QStringLiteral("connectivity"), processing.connectivity);
     settings.setValue(QStringLiteral("otsuMinimumComponentAreaPx"), processing.otsuMinimumComponentAreaPx);
     settings.setValue(QStringLiteral("otsuMaximumComponentAreaPx"), processing.otsuMaximumComponentAreaPx);
-    settings.setValue(QStringLiteral("smallKernelRadiusPx"), processing.smallKernelRadiusPx);
+    settings.setValue(QStringLiteral("centroidKernelRadiusPx"),
+                      processing.centroidKernelRadiusPx);
     settings.setValue(QStringLiteral("minimumPeakDistancePx"), processing.minimumPeakDistancePx);
     settings.setValue(QStringLiteral("minimumCentroidIntensity"), processing.minimumCentroidIntensity);
-    settings.setValue(QStringLiteral("roiRecenteringDistanceToEdgePx"), processing.roiRecenteringDistanceToEdgePx);
-    settings.setValue(QStringLiteral("roiRecenteringConsecutiveFrames"), processing.roiRecenteringConsecutiveFrames);
-    settings.setValue(QStringLiteral("roiRecenteringCooldownMs"), processing.roiRecenteringCooldownMs);
-    settings.setValue(QStringLiteral("roiRecenteringMinimumShiftPx"), processing.roiRecenteringMinimumShiftPx);
-    settings.setValue(QStringLiteral("roiLostRelocalizationFrames"), processing.roiLostRelocalizationFrames);
+    settings.setValue(QStringLiteral("maximumDifferentialJumpPx"),
+                      processing.maximumDifferentialJumpPx);
+    settings.setValue(QStringLiteral("differentialBaselineViolationFrames"),
+                      processing.differentialBaselineViolationFrames);
+    settings.setValue(QStringLiteral("lostPairRelocalizationFrames"), processing.lostPairRelocalizationFrames);
     settings.setValue(QStringLiteral("r0WindowFrames"), processing.r0WindowFrames);
     settings.setValue(QStringLiteral("resultUpdateIntervalSec"), processing.resultUpdateIntervalSec);
     settings.setValue(QStringLiteral("tau0HistorySeconds"), processing.tau0HistorySeconds);
@@ -164,15 +194,15 @@ void AppConfig::save(QSettings &settings) const
 
     settings.beginGroup(QStringLiteral("ui"));
     settings.setValue(QStringLiteral("showFullFramePreview"), ui.showFullFramePreview);
-    settings.setValue(QStringLiteral("showRoiPreview"), ui.showRoiPreview);
     settings.setValue(QStringLiteral("drawHardwareAoi"), ui.drawHardwareAoi);
-    settings.setValue(QStringLiteral("drawSoftwareRois"), ui.drawSoftwareRois);
     settings.endGroup();
 }
 
 void AppConfig::load(QSettings &settings)
 {
     AppConfig fallback = defaults();
+    const int storedConfigVersion = settings.value(
+        QStringLiteral("configVersion"), 0).toInt();
 
     settings.beginGroup(QStringLiteral("physical"));
     optical.mainTelescopeApertureMm = settings.value(QStringLiteral("mainTelescopeApertureMm"),
@@ -181,6 +211,8 @@ void AppConfig::load(QSettings &settings)
         fallback.optical.subApertureDiameterMm).toDouble();
     optical.baselineSeparationMm = settings.value(QStringLiteral("baselineSeparationMm"),
         fallback.optical.baselineSeparationMm).toDouble();
+    optical.baselineAngleDeg = settings.value(QStringLiteral("baselineAngleDeg"),
+        fallback.optical.baselineAngleDeg).toDouble();
     optical.focalLengthMm = settings.value(QStringLiteral("focalLengthMm"),
         fallback.optical.focalLengthMm).toDouble();
     optical.wavelengthNm = settings.value(QStringLiteral("wavelengthNm"),
@@ -191,6 +223,32 @@ void AppConfig::load(QSettings &settings)
         fallback.optical.zenithAngleDeg).toDouble();
     settings.endGroup();
 
+    // Version 1 stored the old physical defaults. Migrate only values that
+    // still equal those defaults, so a user-customized value is preserved.
+    if (storedConfigVersion < kAppConfigVersion) {
+        settings.beginGroup(QStringLiteral("physical"));
+        if (isLegacyDefault(optical.subApertureDiameterMm,
+                            legacySubApertureDiameterMm)) {
+            optical.subApertureDiameterMm = fallback.optical.subApertureDiameterMm;
+            settings.setValue(QStringLiteral("subApertureDiameterMm"),
+                              optical.subApertureDiameterMm);
+        }
+        if (isLegacyDefault(optical.baselineSeparationMm,
+                            legacyBaselineSeparationMm)) {
+            optical.baselineSeparationMm = fallback.optical.baselineSeparationMm;
+            settings.setValue(QStringLiteral("baselineSeparationMm"),
+                              optical.baselineSeparationMm);
+        }
+        if (isLegacyDefault(optical.zenithAngleDeg, legacyZenithAngleDeg)) {
+            optical.zenithAngleDeg = fallback.optical.zenithAngleDeg;
+            settings.setValue(QStringLiteral("zenithAngleDeg"),
+                              optical.zenithAngleDeg);
+        }
+        settings.endGroup();
+        settings.setValue(QStringLiteral("configVersion"), kAppConfigVersion);
+        settings.sync();
+    }
+
     settings.beginGroup(QStringLiteral("acquisition"));
     acquisition.frameWidth = settings.value(QStringLiteral("frameWidth"),
         fallback.acquisition.frameWidth).toInt();
@@ -198,10 +256,8 @@ void AppConfig::load(QSettings &settings)
         fallback.acquisition.frameHeight).toInt();
     acquisition.measurementRateHz = settings.value(QStringLiteral("measurementRateHz"),
         fallback.acquisition.measurementRateHz).toDouble();
-    acquisition.fullFramePreviewRateHz = settings.value(QStringLiteral("fullFramePreviewRateHz"),
-        fallback.acquisition.fullFramePreviewRateHz).toDouble();
-    acquisition.roiPreviewRateHz = settings.value(QStringLiteral("roiPreviewRateHz"),
-        fallback.acquisition.roiPreviewRateHz).toDouble();
+    acquisition.previewRateHz = settings.value(QStringLiteral("previewRateHz"),
+        fallback.acquisition.previewRateHz).toDouble();
     acquisition.exposureTimeMs = settings.value(QStringLiteral("exposureTimeMs"),
         fallback.acquisition.exposureTimeMs).toDouble();
     acquisition.targetSampleCount = settings.value(QStringLiteral("targetSampleCount"),
@@ -214,14 +270,21 @@ void AppConfig::load(QSettings &settings)
     settings.endGroup();
 
     settings.beginGroup(QStringLiteral("processing"));
-    processing.roiWidthPx = settings.value(QStringLiteral("roiWidthPx"),
-        fallback.processing.roiWidthPx).toInt();
-    processing.roiHeightPx = settings.value(QStringLiteral("roiHeightPx"),
-        fallback.processing.roiHeightPx).toInt();
     processing.hardwareAoiMarginPx = settings.value(QStringLiteral("hardwareAoiMarginPx"),
         fallback.processing.hardwareAoiMarginPx).toInt();
-    processing.otsuHistogramBins = settings.value(QStringLiteral("otsuHistogramBins"),
-        fallback.processing.otsuHistogramBins).toInt();
+    processing.hardwareAoiMaxWidthPx = settings.value(QStringLiteral("hardwareAoiMaxWidthPx"),
+        fallback.processing.hardwareAoiMaxWidthPx).toInt();
+    processing.hardwareAoiMaxHeightPx = settings.value(QStringLiteral("hardwareAoiMaxHeightPx"),
+        fallback.processing.hardwareAoiMaxHeightPx).toInt();
+    processing.hardwareAoiUpdateDistanceToEdgePx = settings.value(
+        QStringLiteral("hardwareAoiUpdateDistanceToEdgePx"),
+        fallback.processing.hardwareAoiUpdateDistanceToEdgePx).toInt();
+    processing.hardwareAoiUpdateMinimumShiftPx = settings.value(
+        QStringLiteral("hardwareAoiUpdateMinimumShiftPx"),
+        fallback.processing.hardwareAoiUpdateMinimumShiftPx).toDouble();
+    processing.hardwareAoiUpdateCooldownMs = settings.value(
+        QStringLiteral("hardwareAoiUpdateCooldownMs"),
+        fallback.processing.hardwareAoiUpdateCooldownMs).toInt();
     processing.otsuSigmaThreshold = settings.value(QStringLiteral("otsuSigmaThreshold"),
         fallback.processing.otsuSigmaThreshold).toDouble();
     processing.otsuPeakFraction = settings.value(QStringLiteral("otsuPeakFraction"),
@@ -232,22 +295,21 @@ void AppConfig::load(QSettings &settings)
         fallback.processing.otsuMinimumComponentAreaPx).toInt();
     processing.otsuMaximumComponentAreaPx = settings.value(QStringLiteral("otsuMaximumComponentAreaPx"),
         fallback.processing.otsuMaximumComponentAreaPx).toInt();
-    processing.smallKernelRadiusPx = settings.value(QStringLiteral("smallKernelRadiusPx"),
-        fallback.processing.smallKernelRadiusPx).toInt();
+    processing.centroidKernelRadiusPx = settings.value(
+        QStringLiteral("centroidKernelRadiusPx"),
+        fallback.processing.centroidKernelRadiusPx).toInt();
     processing.minimumPeakDistancePx = settings.value(QStringLiteral("minimumPeakDistancePx"),
         fallback.processing.minimumPeakDistancePx).toDouble();
     processing.minimumCentroidIntensity = settings.value(QStringLiteral("minimumCentroidIntensity"),
         fallback.processing.minimumCentroidIntensity).toDouble();
-    processing.roiRecenteringDistanceToEdgePx = settings.value(QStringLiteral("roiRecenteringDistanceToEdgePx"),
-        fallback.processing.roiRecenteringDistanceToEdgePx).toInt();
-    processing.roiRecenteringConsecutiveFrames = settings.value(QStringLiteral("roiRecenteringConsecutiveFrames"),
-        fallback.processing.roiRecenteringConsecutiveFrames).toInt();
-    processing.roiRecenteringCooldownMs = settings.value(QStringLiteral("roiRecenteringCooldownMs"),
-        fallback.processing.roiRecenteringCooldownMs).toInt();
-    processing.roiRecenteringMinimumShiftPx = settings.value(QStringLiteral("roiRecenteringMinimumShiftPx"),
-        fallback.processing.roiRecenteringMinimumShiftPx).toDouble();
-    processing.roiLostRelocalizationFrames = settings.value(QStringLiteral("roiLostRelocalizationFrames"),
-        fallback.processing.roiLostRelocalizationFrames).toInt();
+    processing.maximumDifferentialJumpPx = settings.value(
+        QStringLiteral("maximumDifferentialJumpPx"),
+        fallback.processing.maximumDifferentialJumpPx).toDouble();
+    processing.differentialBaselineViolationFrames = settings.value(
+        QStringLiteral("differentialBaselineViolationFrames"),
+        fallback.processing.differentialBaselineViolationFrames).toInt();
+    processing.lostPairRelocalizationFrames = settings.value(QStringLiteral("lostPairRelocalizationFrames"),
+        fallback.processing.lostPairRelocalizationFrames).toInt();
     processing.r0WindowFrames = settings.value(QStringLiteral("r0WindowFrames"),
         fallback.processing.r0WindowFrames).toInt();
     processing.resultUpdateIntervalSec = settings.value(QStringLiteral("resultUpdateIntervalSec"),
@@ -293,11 +355,7 @@ void AppConfig::load(QSettings &settings)
     settings.beginGroup(QStringLiteral("ui"));
     ui.showFullFramePreview = settings.value(QStringLiteral("showFullFramePreview"),
         fallback.ui.showFullFramePreview).toBool();
-    ui.showRoiPreview = settings.value(QStringLiteral("showRoiPreview"),
-        fallback.ui.showRoiPreview).toBool();
     ui.drawHardwareAoi = settings.value(QStringLiteral("drawHardwareAoi"),
         fallback.ui.drawHardwareAoi).toBool();
-    ui.drawSoftwareRois = settings.value(QStringLiteral("drawSoftwareRois"),
-        fallback.ui.drawSoftwareRois).toBool();
     settings.endGroup();
 }

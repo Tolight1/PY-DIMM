@@ -15,8 +15,8 @@ def test_population_variance_uses_n():
 
 def test_dimm_coefficients_are_positive_for_defaults():
     lam = 550e-9
-    diameter = 60e-3
-    baseline = 150e-3
+    diameter = 80e-3
+    baseline = 170e-3
     longitudinal = 2 * lam**2 * (
         0.179 * diameter ** (-1 / 3) - 0.0968 * baseline ** (-1 / 3)
     )

@@ -19,8 +19,10 @@ int main(int argc, char *argv[])
     qRegisterMetaType<RoiRect>("RoiRect");
     qRegisterMetaType<CameraCapabilities>("CameraCapabilities");
     qRegisterMetaType<CameraStatistics>("CameraStatistics");
-    qRegisterMetaType<RoiOverlay>("RoiOverlay");
+    qRegisterMetaType<DisplayOverlay>("DisplayOverlay");
     qRegisterMetaType<MeasurementResult>("MeasurementResult");
+    qRegisterMetaType<AoiEvent>("AoiEvent");
+    qRegisterMetaType<AoiTransitionSample>("AoiTransitionSample");
 
     UiTheme::apply(app);
 

@@ -35,9 +35,16 @@ QString csvLine(const QStringList &fields)
     return escaped.join(QLatin1Char(','));
 }
 
-double nowTimestampSec()
+struct LogTimestamp {
+    QString epochSeconds;
+    QString iso;
+};
+
+LogTimestamp nowTimestamp()
 {
-    return QDateTime::currentMSecsSinceEpoch() / 1000.0;
+    const QDateTime current = QDateTime::currentDateTime();
+    return {QString::number(current.toMSecsSinceEpoch() / 1000.0, 'f', 6),
+            current.toString(Qt::ISODateWithMs)};
 }
 
 QString pixelFormatName(PixelFormat format)
@@ -118,6 +125,7 @@ bool ResultWriter::startRun(const AppConfig &config,
         if (!openCsv(
                 atmosphereFile_, QStringLiteral("atmosphere_summary.csv"),
                 {QStringLiteral("timestamp_s"),
+                 QStringLiteral("timestamp_iso"),
                  QStringLiteral("window_end_sequence"),
                  QStringLiteral("valid_sample_count"),
                  QStringLiteral("measured_rate_hz"),
@@ -131,7 +139,10 @@ bool ResultWriter::startRun(const AppConfig &config,
                  QStringLiteral("tau0_valid"),
                  QStringLiteral("tau0_resolution_ms"),
                  QStringLiteral("under_resolved"),
-                 QStringLiteral("status")}))
+                 QStringLiteral("status"),
+                 QStringLiteral("configuration_generation"),
+                 QStringLiteral("aoi_epoch"),
+                 QStringLiteral("aoi_transition_id")}))
              {
                  finishRun();
                  return false;
@@ -141,7 +152,9 @@ bool ResultWriter::startRun(const AppConfig &config,
     if (config.storage.saveCentroidCsv) {
         if (!openCsv(
                 centroidFile_, QStringLiteral("centroid_details.csv"),
-                {QStringLiteral("timestamp_s"), QStringLiteral("sequence"),
+                {QStringLiteral("timestamp_s"),
+                 QStringLiteral("timestamp_iso"),
+                 QStringLiteral("sequence"),
                  QStringLiteral("star_a_x_px"),
                  QStringLiteral("star_a_y_px"),
                  QStringLiteral("star_b_x_px"),
@@ -150,14 +163,15 @@ bool ResultWriter::startRun(const AppConfig &config,
                  QStringLiteral("transverse_px"),
                  QStringLiteral("longitudinal_arcsec"),
                  QStringLiteral("transverse_arcsec"),
-                 QStringLiteral("roi_a_x"), QStringLiteral("roi_a_y"),
-                 QStringLiteral("roi_a_width"),
-                 QStringLiteral("roi_a_height"),
-                 QStringLiteral("roi_b_x"), QStringLiteral("roi_b_y"),
-                 QStringLiteral("roi_b_width"),
-                 QStringLiteral("roi_b_height"),
                  QStringLiteral("valid_pair"),
-                 QStringLiteral("diagnostic")}))
+                 QStringLiteral("diagnostic"),
+                 QStringLiteral("configuration_generation"),
+                 QStringLiteral("aoi_epoch"),
+                 QStringLiteral("aoi_transition_id"),
+                 QStringLiteral("source_rect_x"),
+                 QStringLiteral("source_rect_y"),
+                 QStringLiteral("source_rect_width"),
+                 QStringLiteral("source_rect_height")}))
              {
                  finishRun();
                  return false;
@@ -168,17 +182,105 @@ bool ResultWriter::startRun(const AppConfig &config,
         if (!openCsv(
                 diagnosticsFile_, QStringLiteral("acquisition_diagnostics.csv"),
                 {QStringLiteral("timestamp_s"),
+                 QStringLiteral("timestamp_iso"),
                  QStringLiteral("received_frames"),
                  QStringLiteral("dropped_frames"),
                  QStringLiteral("queue_dropped_frames"),
-                 QStringLiteral("measured_rate_hz"),
+                 QStringLiteral("target_rate_hz"),
+                 QStringLiteral("resulting_frame_rate_hz"),
+                 QStringLiteral("acquisition_rate_hz"),
                  QStringLiteral("average_callback_ms"),
                  QStringLiteral("connected"),
-                 QStringLiteral("last_error")}))
+                 QStringLiteral("rate_diagnostic"),
+                QStringLiteral("last_error")}))
              {
                  finishRun();
                  return false;
              }
+
+        if (!openCsv(
+                aoiEventsFile_, QStringLiteral("aoi_events.csv"),
+                {QStringLiteral("timestamp_s"),
+                 QStringLiteral("timestamp_iso"),
+                 QStringLiteral("event"),
+                 QStringLiteral("aoi_epoch"),
+                 QStringLiteral("aoi_transition_id"),
+                 QStringLiteral("frame_sequence"),
+                 QStringLiteral("frame_timestamp_s"),
+                 QStringLiteral("frame_generation"),
+                 QStringLiteral("previous_generation"),
+                 QStringLiteral("requested_generation"),
+                 QStringLiteral("applied_generation"),
+                 QStringLiteral("stale_frames_dropped"),
+                 QStringLiteral("requested_x"),
+                 QStringLiteral("requested_y"),
+                 QStringLiteral("requested_width"),
+                 QStringLiteral("requested_height"),
+                 QStringLiteral("applied_x"),
+                 QStringLiteral("applied_y"),
+                 QStringLiteral("applied_width"),
+                 QStringLiteral("applied_height"),
+                 QStringLiteral("star_a_x_px"),
+                 QStringLiteral("star_a_y_px"),
+                 QStringLiteral("star_b_x_px"),
+                 QStringLiteral("star_b_y_px"),
+                 QStringLiteral("longitudinal_px"),
+                 QStringLiteral("transverse_px"),
+                 QStringLiteral("differential_jump_px"),
+                 QStringLiteral("differential_baseline_deviation_px"),
+                 QStringLiteral("differential_baseline_violation_frames"),
+                 QStringLiteral("valid_pair"),
+                 QStringLiteral("sample_accepted"),
+                 QStringLiteral("valid_sample_count"),
+                 QStringLiteral("reason")}))
+              {
+                  finishRun();
+                  return false;
+              }
+
+        if (!openCsv(
+                aoiTransitionSamplesFile_,
+                QStringLiteral("aoi_transition_samples.csv"),
+                {QStringLiteral("timestamp_s"),
+                 QStringLiteral("timestamp_iso"),
+                 QStringLiteral("aoi_epoch"),
+                 QStringLiteral("aoi_transition_id"),
+                 QStringLiteral("frame_index_after_apply"),
+                 QStringLiteral("frame_sequence"),
+                 QStringLiteral("frame_timestamp_s"),
+                 QStringLiteral("frame_generation"),
+                 QStringLiteral("source_rect_x"),
+                 QStringLiteral("source_rect_y"),
+                 QStringLiteral("source_rect_width"),
+                 QStringLiteral("source_rect_height"),
+                 QStringLiteral("applied_aoi_x"),
+                 QStringLiteral("applied_aoi_y"),
+                 QStringLiteral("applied_aoi_width"),
+                 QStringLiteral("applied_aoi_height"),
+                 QStringLiteral("star_a_x_px"),
+                 QStringLiteral("star_a_y_px"),
+                 QStringLiteral("star_a_peak_intensity"),
+                 QStringLiteral("star_a_component_area_px"),
+                 QStringLiteral("star_b_x_px"),
+                 QStringLiteral("star_b_y_px"),
+                 QStringLiteral("star_b_peak_intensity"),
+                 QStringLiteral("star_b_component_area_px"),
+                 QStringLiteral("longitudinal_px"),
+                 QStringLiteral("transverse_px"),
+                 QStringLiteral("differential_jump_px"),
+                 QStringLiteral("differential_baseline_deviation_px"),
+                 QStringLiteral("differential_baseline_violation_frames"),
+                 QStringLiteral("star_a_valid"),
+                 QStringLiteral("star_b_valid"),
+                 QStringLiteral("valid_pair"),
+                 QStringLiteral("sample_accepted"),
+                 QStringLiteral("differential_continuity_rejected"),
+                 QStringLiteral("request_full_frame_relocalization"),
+                 QStringLiteral("diagnostic")}))
+            {
+                finishRun();
+                return false;
+            }
     }
 
     if (config.storage.saveRunMetadataJson) {
@@ -230,10 +332,8 @@ bool ResultWriter::startRun(const AppConfig &config,
                            pixelFormatName(config.acquisition.pixelFormat));
         acquisition.insert(QStringLiteral("measurementRateHz"),
                            config.acquisition.measurementRateHz);
-        acquisition.insert(QStringLiteral("fullFramePreviewRateHz"),
-                           config.acquisition.fullFramePreviewRateHz);
-        acquisition.insert(QStringLiteral("roiPreviewRateHz"),
-                           config.acquisition.roiPreviewRateHz);
+        acquisition.insert(QStringLiteral("previewRateHz"),
+                           config.acquisition.previewRateHz);
         acquisition.insert(QStringLiteral("exposureTimeMs"),
                            config.acquisition.exposureTimeMs);
         acquisition.insert(QStringLiteral("targetSampleCount"),
@@ -245,14 +345,20 @@ bool ResultWriter::startRun(const AppConfig &config,
         metadata.insert(QStringLiteral("acquisition"), acquisition);
 
         QJsonObject processing;
-        processing.insert(QStringLiteral("roiWidthPx"),
-                          config.processing.roiWidthPx);
-        processing.insert(QStringLiteral("roiHeightPx"),
-                          config.processing.roiHeightPx);
+        processing.insert(QStringLiteral("centroidKernelRadiusPx"),
+                          config.processing.centroidKernelRadiusPx);
         processing.insert(QStringLiteral("hardwareAoiMarginPx"),
                           config.processing.hardwareAoiMarginPx);
-        processing.insert(QStringLiteral("otsuHistogramBins"),
-                          config.processing.otsuHistogramBins);
+        processing.insert(QStringLiteral("hardwareAoiMaxWidthPx"),
+                          config.processing.hardwareAoiMaxWidthPx);
+        processing.insert(QStringLiteral("hardwareAoiMaxHeightPx"),
+                          config.processing.hardwareAoiMaxHeightPx);
+        processing.insert(QStringLiteral("hardwareAoiUpdateDistanceToEdgePx"),
+                          config.processing.hardwareAoiUpdateDistanceToEdgePx);
+        processing.insert(QStringLiteral("hardwareAoiUpdateMinimumShiftPx"),
+                          config.processing.hardwareAoiUpdateMinimumShiftPx);
+        processing.insert(QStringLiteral("hardwareAoiUpdateCooldownMs"),
+                          config.processing.hardwareAoiUpdateCooldownMs);
         processing.insert(QStringLiteral("otsuSigmaThreshold"),
                           config.processing.otsuSigmaThreshold);
         processing.insert(QStringLiteral("otsuPeakFraction"),
@@ -263,22 +369,20 @@ bool ResultWriter::startRun(const AppConfig &config,
                           config.processing.otsuMinimumComponentAreaPx);
         processing.insert(QStringLiteral("otsuMaximumComponentAreaPx"),
                           config.processing.otsuMaximumComponentAreaPx);
-        processing.insert(QStringLiteral("smallKernelRadiusPx"),
-                          config.processing.smallKernelRadiusPx);
         processing.insert(QStringLiteral("minimumPeakDistancePx"),
                           config.processing.minimumPeakDistancePx);
         processing.insert(QStringLiteral("minimumCentroidIntensity"),
                           config.processing.minimumCentroidIntensity);
-        processing.insert(QStringLiteral("roiRecenteringDistanceToEdgePx"),
-                          config.processing.roiRecenteringDistanceToEdgePx);
-        processing.insert(QStringLiteral("roiRecenteringConsecutiveFrames"),
-                          config.processing.roiRecenteringConsecutiveFrames);
-        processing.insert(QStringLiteral("roiRecenteringCooldownMs"),
-                          config.processing.roiRecenteringCooldownMs);
-        processing.insert(QStringLiteral("roiRecenteringMinimumShiftPx"),
-                          config.processing.roiRecenteringMinimumShiftPx);
-        processing.insert(QStringLiteral("roiLostRelocalizationFrames"),
-                          config.processing.roiLostRelocalizationFrames);
+        processing.insert(QStringLiteral("maximumDifferentialJumpPx"),
+                          config.processing.maximumDifferentialJumpPx);
+        processing.insert(QStringLiteral("differentialBaselineWindowFrames"),
+                          kDifferentialBaselineWindowFrames);
+        processing.insert(QStringLiteral("differentialBaselineViolationFrames"),
+                          config.processing.differentialBaselineViolationFrames);
+        processing.insert(QStringLiteral("aoiTransitionDiagnosticFrameCount"),
+                          kAoiTransitionDiagnosticFrameCount);
+        processing.insert(QStringLiteral("lostPairRelocalizationFrames"),
+                          config.processing.lostPairRelocalizationFrames);
         processing.insert(QStringLiteral("r0WindowFrames"),
                           config.processing.r0WindowFrames);
         processing.insert(QStringLiteral("resultUpdateIntervalSec"),
@@ -359,7 +463,9 @@ void ResultWriter::append(const MeasurementResult &result)
         QTextStream stream(&centroidFile_);
         const auto &s = result.stars;
         const auto &d = result.differential;
-        stream << csvLine({QString::number(nowTimestampSec(), 'f', 6),
+        const LogTimestamp timestamp = nowTimestamp();
+        stream << csvLine({timestamp.epochSeconds,
+                           timestamp.iso,
                            QString::number(result.sequence),
                            QString::number(s.fullFrameStarA.x(), 'f', 3),
                            QString::number(s.fullFrameStarA.y(), 'f', 3),
@@ -369,17 +475,16 @@ void ResultWriter::append(const MeasurementResult &result)
                            QString::number(d.transversePx, 'f', 4),
                            QString::number(d.longitudinalArcsec, 'f', 6),
                            QString::number(d.transverseArcsec, 'f', 6),
-                           QString::number(s.roiA.x),
-                           QString::number(s.roiA.y),
-                           QString::number(s.roiA.width),
-                           QString::number(s.roiA.height),
-                           QString::number(s.roiB.x),
-                           QString::number(s.roiB.y),
-                           QString::number(s.roiB.width),
-                           QString::number(s.roiB.height),
                            s.validPair ? QStringLiteral("1")
                                        : QStringLiteral("0"),
-                           s.diagnostic})
+                           s.diagnostic,
+                           QString::number(result.configurationGeneration),
+                           QString::number(result.aoiEpoch),
+                           QString::number(result.transitionId),
+                           QString::number(result.sourceRect.x()),
+                           QString::number(result.sourceRect.y()),
+                           QString::number(result.sourceRect.width()),
+                           QString::number(result.sourceRect.height())})
               << '\n';
         centroidFile_.flush();
     }
@@ -387,7 +492,9 @@ void ResultWriter::append(const MeasurementResult &result)
     if (atmosphereFile_.isOpen()) {
         QTextStream stream(&atmosphereFile_);
         const auto &a = result.atmosphere;
-        stream << csvLine({QString::number(nowTimestampSec(), 'f', 6),
+        const LogTimestamp timestamp = nowTimestamp();
+        stream << csvLine({timestamp.epochSeconds,
+                           timestamp.iso,
                            QString::number(a.windowEndSequence),
                            QString::number(a.validSampleCount),
                            QString::number(a.measuredRateHz, 'f', 3),
@@ -403,10 +510,117 @@ void ResultWriter::append(const MeasurementResult &result)
                            QString::number(a.tau0ResolutionMs, 'f', 4),
                            a.underResolved ? QStringLiteral("1")
                                            : QStringLiteral("0"),
-                           a.statusMessage})
+                           a.statusMessage,
+                           QString::number(result.configurationGeneration),
+                           QString::number(result.aoiEpoch),
+                           QString::number(result.transitionId)})
               << '\n';
         atmosphereFile_.flush();
     }
+}
+
+void ResultWriter::appendAoiEvent(const AoiEvent &event)
+{
+    if (!running_ || !aoiEventsFile_.isOpen())
+        return;
+
+    const auto rectFields = [](const RoiRect &rect) {
+        return QStringList{QString::number(rect.x),
+                           QString::number(rect.y),
+                           QString::number(rect.width),
+                           QString::number(rect.height)};
+    };
+
+    const LogTimestamp timestamp = nowTimestamp();
+    QStringList fields{timestamp.epochSeconds,
+                       timestamp.iso,
+                       event.type,
+                       QString::number(event.aoiEpoch),
+                       QString::number(event.transitionId),
+                       QString::number(event.frameSequence),
+                       QString::number(event.frameTimestampSec, 'f', 9),
+                       QString::number(event.frameGeneration),
+                       QString::number(event.previousGeneration),
+                       QString::number(event.requestedGeneration),
+                       QString::number(event.appliedGeneration),
+                       QString::number(event.staleFramesDropped)};
+    fields.append(rectFields(event.requestedAoi));
+    fields.append(rectFields(event.appliedAoi));
+    fields.append({QString::number(event.starA.x(), 'f', 3),
+                   QString::number(event.starA.y(), 'f', 3),
+                   QString::number(event.starB.x(), 'f', 3),
+                   QString::number(event.starB.y(), 'f', 3),
+                   QString::number(event.longitudinalPx, 'f', 4),
+                   QString::number(event.transversePx, 'f', 4),
+                   QString::number(event.differentialJumpPx, 'f', 4),
+                   QString::number(event.differentialBaselineDeviationPx, 'f', 4),
+                   QString::number(event.differentialBaselineViolationFrames),
+                   event.validPair ? QStringLiteral("1")
+                                   : QStringLiteral("0"),
+                   event.sampleAccepted ? QStringLiteral("1")
+                                        : QStringLiteral("0"),
+                   QString::number(event.validSampleCount),
+                   event.reason});
+
+    QTextStream stream(&aoiEventsFile_);
+    stream << csvLine(fields) << '\n';
+    aoiEventsFile_.flush();
+}
+
+void ResultWriter::appendAoiTransitionSample(
+    const AoiTransitionSample &sample)
+{
+    if (!running_ || !aoiTransitionSamplesFile_.isOpen())
+        return;
+
+    const LogTimestamp timestamp = nowTimestamp();
+    QTextStream stream(&aoiTransitionSamplesFile_);
+    stream << csvLine({timestamp.epochSeconds,
+                       timestamp.iso,
+                       QString::number(sample.aoiEpoch),
+                       QString::number(sample.transitionId),
+                       QString::number(sample.frameIndexAfterApply),
+                       QString::number(sample.frameSequence),
+                       QString::number(sample.frameTimestampSec, 'f', 9),
+                       QString::number(sample.frameGeneration),
+                       QString::number(sample.sourceRect.x()),
+                       QString::number(sample.sourceRect.y()),
+                       QString::number(sample.sourceRect.width()),
+                       QString::number(sample.sourceRect.height()),
+                       QString::number(sample.appliedAoi.x),
+                       QString::number(sample.appliedAoi.y),
+                       QString::number(sample.appliedAoi.width),
+                       QString::number(sample.appliedAoi.height),
+                       QString::number(sample.starA.x(), 'f', 3),
+                       QString::number(sample.starA.y(), 'f', 3),
+                       QString::number(sample.starAPeakIntensity, 'f', 3),
+                       QString::number(sample.starAComponentAreaPx),
+                       QString::number(sample.starB.x(), 'f', 3),
+                       QString::number(sample.starB.y(), 'f', 3),
+                       QString::number(sample.starBPeakIntensity, 'f', 3),
+                       QString::number(sample.starBComponentAreaPx),
+                       QString::number(sample.longitudinalPx, 'f', 4),
+                       QString::number(sample.transversePx, 'f', 4),
+                       QString::number(sample.differentialJumpPx, 'f', 4),
+                       QString::number(sample.differentialBaselineDeviationPx, 'f', 4),
+                       QString::number(sample.differentialBaselineViolationFrames),
+                       sample.starAValid ? QStringLiteral("1")
+                                         : QStringLiteral("0"),
+                       sample.starBValid ? QStringLiteral("1")
+                                         : QStringLiteral("0"),
+                       sample.validPair ? QStringLiteral("1")
+                                        : QStringLiteral("0"),
+                       sample.sampleAccepted ? QStringLiteral("1")
+                                              : QStringLiteral("0"),
+                       sample.differentialContinuityRejected
+                           ? QStringLiteral("1")
+                           : QStringLiteral("0"),
+                       sample.requestFullFrameRelocalization
+                           ? QStringLiteral("1")
+                           : QStringLiteral("0"),
+                       sample.diagnostic})
+           << '\n';
+    aoiTransitionSamplesFile_.flush();
 }
 
 void ResultWriter::appendCameraStats(const CameraStatistics &stats)
@@ -416,15 +630,20 @@ void ResultWriter::appendCameraStats(const CameraStatistics &stats)
     if (!diagnosticsFile_.isOpen())
         return;
 
+    const LogTimestamp timestamp = nowTimestamp();
     QTextStream stream(&diagnosticsFile_);
-    stream << csvLine({QString::number(nowTimestampSec(), 'f', 6),
+    stream << csvLine({timestamp.epochSeconds,
+                       timestamp.iso,
                        QString::number(stats.receivedFrames),
                        QString::number(stats.droppedFrames),
                        QString::number(stats.queueDroppedFrames),
-                       QString::number(stats.measuredRateHz, 'f', 3),
+                       QString::number(stats.targetRateHz, 'f', 3),
+                       QString::number(stats.resultingFrameRateHz, 'f', 3),
+                       QString::number(stats.acquisitionRateHz, 'f', 3),
                        QString::number(stats.averageCallbackMs, 'f', 3),
                        stats.connected ? QStringLiteral("1")
                                        : QStringLiteral("0"),
+                       stats.rateDiagnostic,
                        stats.lastError})
           << '\n';
     diagnosticsFile_.flush();
@@ -438,6 +657,10 @@ void ResultWriter::finishRun()
         centroidFile_.close();
     if (diagnosticsFile_.isOpen())
         diagnosticsFile_.close();
+    if (aoiEventsFile_.isOpen())
+        aoiEventsFile_.close();
+    if (aoiTransitionSamplesFile_.isOpen())
+        aoiTransitionSamplesFile_.close();
     running_ = false;
     lastResultRecordMs_ = -1;
     runDirectory_.clear();

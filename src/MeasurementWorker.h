@@ -32,7 +32,9 @@ signals:
     void fullFrameRequested();
     void resultReady(MeasurementResult result);
     void measurementStatusReady(MeasurementResult result);
-    void roiStateChanged(RoiOverlay overlay);
+    void aoiEvent(AoiEvent event);
+    void aoiTransitionSample(AoiTransitionSample sample);
+    void starStateChanged(DisplayOverlay overlay);
     void measurementStatsUpdated(double measuredRateHz, std::uint64_t validPairs);
     void measurementError(QString message);
     // Emitted from stop() once the poll loop has stopped, so the GUI can
@@ -49,8 +51,17 @@ private:
                          std::uint64_t frameTimestampNs,
                          double timestampSec,
                          const TwoStarMeasurement &stars,
-                         const DifferentialSample &sample);
+                         const DifferentialSample &sample,
+                         std::uint64_t configurationGeneration,
+                         const QRect &sourceRect);
+    void maybeEmitAoiTransitionSample(
+        const CameraFrame &frame,
+        const TrackerUpdate &update,
+        const DifferentialSample &sample,
+        bool sampleAccepted,
+        double timestampSec);
     double currentRateHz(std::uint64_t referenceTimestampNs) const;
+    void publishOverlayState(std::uint64_t sequence = 0);
     void resetState();
 
     FrameQueue &queue_;
@@ -62,10 +73,26 @@ private:
     bool initialLocateDone_ = false;
     bool aoiChangePending_ = false;
     std::uint64_t expectedAoiGeneration_ = 0;
+    std::uint64_t staleFramesDroppedSinceAoi_ = 0;
+    bool awaitingFirstValidAfterAoi_ = false;
+    std::uint64_t aoiEpoch_ = 0;
+    std::uint64_t nextTransitionId_ = 0;
+    std::uint64_t pendingTransitionId_ = 0;
+    std::uint64_t pendingPreviousGeneration_ = 0;
+    std::uint64_t pendingRequestedGeneration_ = 0;
+    RoiRect pendingRequestedAoi_{0, 0, 0, 0};
+    std::uint64_t activeTransitionId_ = 0;
+    std::uint64_t activePreviousGeneration_ = 0;
+    std::uint64_t activeRequestedGeneration_ = 0;
+    RoiRect activeRequestedAoi_{0, 0, 0, 0};
+    RoiRect activeAppliedAoi_{0, 0, 0, 0};
+    std::uint64_t aoiTransitionDiagnosticFrameIndex_ = 0;
+    std::uint64_t aoiTransitionDiagnosticFramesRemaining_ = 0;
     std::uint64_t validPairCount_ = 0;
-    std::uint64_t validPairsSinceLastResult_ = 0;
     QTimer *pollTimer_ = nullptr;
     bool resultEmitted_ = false;
+    bool measurementTemporarilyInvalid_ = false;
+    double lastResultTimestampSec_ = 0.0;
     qint64 lastHeartbeatMs_ = 0;
     qint64 lastPreviewMs_ = 0;
     std::deque<qint64> rateTimestampsNs_;

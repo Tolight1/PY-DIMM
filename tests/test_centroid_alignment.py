@@ -17,8 +17,7 @@ def test_processing_defaults_match_ui2_centroid_pipeline():
     assert "int connectivity = 8" in source
     assert "int otsuMinimumComponentAreaPx = 9" in source
     assert "int otsuMaximumComponentAreaPx = 1000" in source
-    assert "int smallKernelRadiusPx = 3" in source
-    assert "otsuHistogramBins" in source
+    assert "int centroidKernelRadiusPx = 3" in source
 
 
 def test_shared_segmentation_uses_native_otsu_and_reference_threshold_floors():
@@ -62,3 +61,10 @@ def test_processing_settings_persist_new_alignment_parameters():
     assert "otsuSigmaThreshold" in settings
     assert "otsuPeakFraction" in settings
     assert "connectivity" in settings
+
+
+def test_settings_dialog_explicitly_binds_connectivity_combo_data():
+    source = read_source("SettingsDialog.cpp")
+
+    assert 'connectivity->addItem(QStringLiteral("4 连通"), 4);' in source
+    assert 'connectivity->addItem(QStringLiteral("8 连通（默认）"), 8);' in source

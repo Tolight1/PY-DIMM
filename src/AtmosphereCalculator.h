@@ -23,8 +23,7 @@ public:
     // is duplicated in the worker.
     static DifferentialSample makeSample(const TwoStarMeasurement &stars,
                                          const OpticalConfig &optical,
-                                         double timestampSec,
-                                         double angleRad = 0.0);
+                                         double timestampSec);
 
 private:
     double calculateTau0(bool &underResolved,

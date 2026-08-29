@@ -58,6 +58,15 @@ SettingsDialog::SettingsDialog(const AppConfig &config, QWidget *parent)
 {
     Ui::SettingsDialog ui;
     ui.setupUi(this);
+    // Bind the semantic values in code as well as in the .ui file.  This keeps
+    // currentData() correct even when a stale AUTOUIC header is picked up by
+    // an incremental build.
+    if (QComboBox *connectivity =
+            findWidget<QComboBox>(this, "processingConnectivityCombo")) {
+        connectivity->clear();
+        connectivity->addItem(QStringLiteral("4 连通"), 4);
+        connectivity->addItem(QStringLiteral("8 连通（默认）"), 8);
+    }
     setMinimumSize(760, 620);
     resize(820, 680);
     rebuildProcessingTab();
@@ -203,44 +212,20 @@ void SettingsDialog::rebuildProcessingTab()
         processingGrid->addWidget(group, row / 2, row % 2, 1, 1);
     };
 
-    addGroup(tr("ROI 与 AOI"),
-             {{QStringLiteral("labelProcessingRoiWidth"),
-               QStringLiteral("processingRoiWidthSpin")},
-              {QStringLiteral("labelProcessingRoiHeight"),
-               QStringLiteral("processingRoiHeightSpin")},
-              {QStringLiteral("labelProcessingAoiMargin"),
-               QStringLiteral("processingAoiMarginSpin")},
-              {QStringLiteral("labelProcessingMinimumPeakDistance"),
-               QStringLiteral("processingMinimumPeakDistanceSpin")}},
-             0);
-    addGroup(tr("Otsu 与质心"),
+    addGroup(tr("Otsu 与候选"),
              {{QStringLiteral("labelProcessingOtsuSigma"),
                QStringLiteral("processingOtsuSigmaSpin")},
               {QStringLiteral("labelProcessingOtsuPeakFraction"),
                QStringLiteral("processingOtsuPeakFractionSpin")},
               {QStringLiteral("labelProcessingConnectivity"),
                QStringLiteral("processingConnectivityCombo")},
-              {QStringLiteral("labelProcessingMinComponentArea"),
-               QStringLiteral("processingMinComponentAreaSpin")},
-              {QStringLiteral("labelProcessingMaxComponentArea"),
-               QStringLiteral("processingMaxComponentAreaSpin")},
-              {QStringLiteral("labelProcessingSmallKernelRadius"),
-               QStringLiteral("processingSmallKernelRadiusSpin")},
-              {QStringLiteral("labelProcessingMinimumCentroidIntensity"),
-               QStringLiteral("processingMinimumCentroidIntensitySpin")}},
-             1);
-    addGroup(tr("ROI 重定位"),
-             {{QStringLiteral("labelProcessingEdgeDistance"),
-               QStringLiteral("processingEdgeDistanceSpin")},
-              {QStringLiteral("labelProcessingRecenteringConsecutive"),
-               QStringLiteral("processingRecenteringConsecutiveSpin")},
-              {QStringLiteral("labelProcessingRecenteringCooldown"),
-               QStringLiteral("processingRecenteringCooldownMsSpin")},
-              {QStringLiteral("labelProcessingMinimumShift"),
-               QStringLiteral("processingMinimumShiftSpin")},
-              {QStringLiteral("labelProcessingLostFrames"),
-               QStringLiteral("processingLostFramesSpin")}},
-             2);
+               {QStringLiteral("labelProcessingMinComponentArea"),
+                QStringLiteral("processingMinComponentAreaSpin")},
+               {QStringLiteral("labelProcessingMaxComponentArea"),
+                QStringLiteral("processingMaxComponentAreaSpin")},
+               {QStringLiteral("labelProcessingMinimumCentroidIntensity"),
+                QStringLiteral("processingMinimumCentroidIntensitySpin")}},
+             0);
     addGroup(tr("大气参数计算"),
              {{QStringLiteral("labelProcessingR0WindowFrames"),
                QStringLiteral("processingR0WindowFramesSpin")},
@@ -252,7 +237,7 @@ void SettingsDialog::rebuildProcessingTab()
                QStringLiteral("processingTauMaximumLagMsSpin")},
               {QStringLiteral("labelProcessingTauMinimumSamples"),
                QStringLiteral("processingTauMinimumSamplesSpin")}},
-             3);
+             1);
 
     if (QLabel *help = findWidget<QLabel>(this, "labelProcessingHelp"))
         processingGrid->addWidget(help, 2, 0, 1, 2);
@@ -328,6 +313,8 @@ AppConfig SettingsDialog::readWidgets() const
         config.optical.subApertureDiameterMm = w->value();
     if (QDoubleSpinBox *w = spin("physicalBaselineMmSpin"))
         config.optical.baselineSeparationMm = w->value();
+    if (QDoubleSpinBox *w = spin("physicalBaselineAngleDegSpin"))
+        config.optical.baselineAngleDeg = w->value();
     if (QDoubleSpinBox *w = spin("physicalFocalLengthMmSpin"))
         config.optical.focalLengthMm = w->value();
     if (QDoubleSpinBox *w = spin("physicalWavelengthNmSpin"))
@@ -343,10 +330,8 @@ AppConfig SettingsDialog::readWidgets() const
         config.acquisition.frameHeight = w->value();
     if (QDoubleSpinBox *w = spin("acquisitionMeasurementRateSpin"))
         config.acquisition.measurementRateHz = w->value();
-    if (QDoubleSpinBox *w = spin("acquisitionFullFramePreviewRateSpin"))
-        config.acquisition.fullFramePreviewRateHz = w->value();
-    if (QDoubleSpinBox *w = spin("acquisitionRoiPreviewRateSpin"))
-        config.acquisition.roiPreviewRateHz = w->value();
+    if (QDoubleSpinBox *w = spin("acquisitionPreviewRateSpin"))
+        config.acquisition.previewRateHz = w->value();
     if (QDoubleSpinBox *w = spin("acquisitionExposureMsSpin"))
         config.acquisition.exposureTimeMs = w->value();
     if (QSpinBox *w = ispin("acquisitionTargetSamplesSpin"))
@@ -356,12 +341,26 @@ AppConfig SettingsDialog::readWidgets() const
     if (QCheckBox *c = check("acquisitionHardwareAoiCheck"))
         config.acquisition.enableHardwareAoi = c->isChecked();
 
-    if (QSpinBox *w = ispin("processingRoiWidthSpin"))
-        config.processing.roiWidthPx = w->value();
-    if (QSpinBox *w = ispin("processingRoiHeightSpin"))
-        config.processing.roiHeightPx = w->value();
-    if (QSpinBox *w = ispin("processingAoiMarginSpin"))
+    if (QSpinBox *w = ispin("aoiCentroidKernelRadiusSpin"))
+        config.processing.centroidKernelRadiusPx = w->value();
+    if (QSpinBox *w = ispin("aoiHardwareMarginSpin"))
         config.processing.hardwareAoiMarginPx = w->value();
+    if (QSpinBox *w = ispin("aoiMaxWidthSpin"))
+        config.processing.hardwareAoiMaxWidthPx = w->value();
+    if (QSpinBox *w = ispin("aoiMaxHeightSpin"))
+        config.processing.hardwareAoiMaxHeightPx = w->value();
+    if (QSpinBox *w = ispin("aoiHardwareUpdateDistanceSpin"))
+        config.processing.hardwareAoiUpdateDistanceToEdgePx = w->value();
+    if (QDoubleSpinBox *w = spin("aoiHardwareUpdateShiftSpin"))
+        config.processing.hardwareAoiUpdateMinimumShiftPx = w->value();
+    if (QSpinBox *w = ispin("aoiHardwareUpdateCooldownSpin"))
+        config.processing.hardwareAoiUpdateCooldownMs = w->value();
+    if (QDoubleSpinBox *w = spin("aoiMinimumPeakDistanceSpin"))
+        config.processing.minimumPeakDistancePx = w->value();
+    if (QDoubleSpinBox *w = spin("aoiMaximumDifferentialJumpSpin"))
+        config.processing.maximumDifferentialJumpPx = w->value();
+    if (QSpinBox *w = ispin("aoiDifferentialBaselineViolationFramesSpin"))
+        config.processing.differentialBaselineViolationFrames = w->value();
     if (QDoubleSpinBox *w = spin("processingOtsuSigmaSpin"))
         config.processing.otsuSigmaThreshold = w->value();
     if (QDoubleSpinBox *w = spin("processingOtsuPeakFractionSpin"))
@@ -372,22 +371,10 @@ AppConfig SettingsDialog::readWidgets() const
         config.processing.otsuMinimumComponentAreaPx = w->value();
     if (QSpinBox *w = ispin("processingMaxComponentAreaSpin"))
         config.processing.otsuMaximumComponentAreaPx = w->value();
-    if (QSpinBox *w = ispin("processingSmallKernelRadiusSpin"))
-        config.processing.smallKernelRadiusPx = w->value();
     if (QDoubleSpinBox *w = spin("processingMinimumCentroidIntensitySpin"))
         config.processing.minimumCentroidIntensity = w->value();
-    if (QDoubleSpinBox *w = spin("processingMinimumPeakDistanceSpin"))
-        config.processing.minimumPeakDistancePx = w->value();
-    if (QSpinBox *w = ispin("processingEdgeDistanceSpin"))
-        config.processing.roiRecenteringDistanceToEdgePx = w->value();
-    if (QSpinBox *w = ispin("processingRecenteringConsecutiveSpin"))
-        config.processing.roiRecenteringConsecutiveFrames = w->value();
-    if (QSpinBox *w = ispin("processingRecenteringCooldownMsSpin"))
-        config.processing.roiRecenteringCooldownMs = w->value();
-    if (QDoubleSpinBox *w = spin("processingMinimumShiftSpin"))
-        config.processing.roiRecenteringMinimumShiftPx = w->value();
-    if (QSpinBox *w = ispin("processingLostFramesSpin"))
-        config.processing.roiLostRelocalizationFrames = w->value();
+    if (QSpinBox *w = ispin("aoiLostPairRelocalizationFramesSpin"))
+        config.processing.lostPairRelocalizationFrames = w->value();
     if (QSpinBox *w = ispin("processingR0WindowFramesSpin"))
         config.processing.r0WindowFrames = w->value();
     if (QDoubleSpinBox *w = spin("processingResultUpdateIntervalSpin"))
@@ -483,6 +470,7 @@ void SettingsDialog::populateWidgets(const AppConfig &config)
     setSpin("physicalMainApertureMmSpin", o.mainTelescopeApertureMm, 1.0, 2000.0, 1);
     setSpin("physicalSubApertureMmSpin", o.subApertureDiameterMm, 1.0, 500.0, 1);
     setSpin("physicalBaselineMmSpin", o.baselineSeparationMm, 1.0, 500.0, 1);
+    setSpin("physicalBaselineAngleDegSpin", o.baselineAngleDeg, -180.0, 180.0, 2);
     setSpin("physicalFocalLengthMmSpin", o.focalLengthMm, 10.0, 20000.0, 1);
     setSpin("physicalWavelengthNmSpin", o.wavelengthNm, 300.0, 1100.0, 1);
     setSpin("physicalPixelSizeUmSpin", o.pixelSizeUm, 0.5, 20.0, 3);
@@ -491,18 +479,29 @@ void SettingsDialog::populateWidgets(const AppConfig &config)
     const AcquisitionConfig &a = config.acquisition;
     setISpin("acquisitionWidthSpin", a.frameWidth, 1, 10000);
     setISpin("acquisitionHeightSpin", a.frameHeight, 1, 10000);
-    setSpin("acquisitionMeasurementRateSpin", a.measurementRateHz, 1.0, 10000.0, 1);
-    setSpin("acquisitionFullFramePreviewRateSpin", a.fullFramePreviewRateHz, 0.1, 60.0, 1);
-    setSpin("acquisitionRoiPreviewRateSpin", a.roiPreviewRateHz, 0.1, 120.0, 1);
+    setSpin("acquisitionMeasurementRateSpin", a.measurementRateHz, 0.1, 10000.0, 1);
+    setSpin("acquisitionPreviewRateSpin", a.previewRateHz, 0.1, 120.0, 1);
     setSpin("acquisitionExposureMsSpin", a.exposureTimeMs, 0.01, 10.0, 3);
     setISpin("acquisitionTargetSamplesSpin", a.targetSampleCount, 100, 1000000);
     setSpin("acquisitionTargetDurationSecSpin", a.targetDurationSec, 1.0, 3600.0, 1);
     setCheck("acquisitionHardwareAoiCheck", a.enableHardwareAoi);
 
     const ProcessingConfig &p = config.processing;
-    setISpin("processingRoiWidthSpin", p.roiWidthPx, 8, 1024);
-    setISpin("processingRoiHeightSpin", p.roiHeightPx, 8, 1024);
-    setISpin("processingAoiMarginSpin", p.hardwareAoiMarginPx, 0, 1024);
+    setISpin("aoiCentroidKernelRadiusSpin", p.centroidKernelRadiusPx, 1, 20);
+    setISpin("aoiHardwareMarginSpin", p.hardwareAoiMarginPx, 0, 1024);
+    setISpin("aoiMaxWidthSpin", p.hardwareAoiMaxWidthPx, 1, 1920);
+    setISpin("aoiMaxHeightSpin", p.hardwareAoiMaxHeightPx, 1, 1200);
+    setISpin("aoiHardwareUpdateDistanceSpin",
+             p.hardwareAoiUpdateDistanceToEdgePx, 0, 1024);
+    setSpin("aoiHardwareUpdateShiftSpin",
+            p.hardwareAoiUpdateMinimumShiftPx, 0.5, 2000.0, 1);
+    setISpin("aoiHardwareUpdateCooldownSpin",
+             p.hardwareAoiUpdateCooldownMs, 0, 600000);
+    setSpin("aoiMinimumPeakDistanceSpin", p.minimumPeakDistancePx, 1.0, 500.0, 1);
+    setSpin("aoiMaximumDifferentialJumpSpin",
+            p.maximumDifferentialJumpPx, 0.5, 2000.0, 1);
+    setISpin("aoiDifferentialBaselineViolationFramesSpin",
+             p.differentialBaselineViolationFrames, 1, 10000);
     setSpin("processingOtsuSigmaSpin", p.otsuSigmaThreshold, 0.0, 20.0, 2);
     setSpin("processingOtsuPeakFractionSpin", p.otsuPeakFraction, 0.01, 0.95, 2);
     if (QComboBox *w = combo("processingConnectivityCombo")) {
@@ -511,15 +510,10 @@ void SettingsDialog::populateWidgets(const AppConfig &config)
     }
     setISpin("processingMinComponentAreaSpin", p.otsuMinimumComponentAreaPx, 9, 4096);
     setISpin("processingMaxComponentAreaSpin", p.otsuMaximumComponentAreaPx, 2, 262144);
-    setISpin("processingSmallKernelRadiusSpin", p.smallKernelRadiusPx, 1, 20);
     setSpin("processingMinimumCentroidIntensitySpin",
             p.minimumCentroidIntensity, 0.0, 65535.0, 2);
-    setSpin("processingMinimumPeakDistanceSpin", p.minimumPeakDistancePx, 1.0, 500.0, 1);
-    setISpin("processingEdgeDistanceSpin", p.roiRecenteringDistanceToEdgePx, 1, 500);
-    setISpin("processingRecenteringConsecutiveSpin", p.roiRecenteringConsecutiveFrames, 1, 1000);
-    setISpin("processingRecenteringCooldownMsSpin", p.roiRecenteringCooldownMs, 0, 600000);
-    setSpin("processingMinimumShiftSpin", p.roiRecenteringMinimumShiftPx, 0.5, 500.0, 1);
-    setISpin("processingLostFramesSpin", p.roiLostRelocalizationFrames, 1, 10000);
+    setISpin("aoiLostPairRelocalizationFramesSpin",
+             p.lostPairRelocalizationFrames, 1, 10000);
     setISpin("processingR0WindowFramesSpin", p.r0WindowFrames, 10, 100000);
     setSpin("processingResultUpdateIntervalSpin", p.resultUpdateIntervalSec, 0.05, 600.0, 2);
     setISpin("processingTauHistorySecondsSpin", p.tau0HistorySeconds, 1, 600);
